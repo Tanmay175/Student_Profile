@@ -1,12 +1,17 @@
 import StudentProfile from "../models/StuProfile.js";
 
+// ✅ CREATE PROFILE
 export const createProfile = async (req, res) => {
   try {
     const { linkedin, github, leetcode } = req.body;
 
+    const resume = req.files?.resume?.[0]?.path || "";
+    const profilePhoto = req.files?.profilePhoto?.[0]?.path || "";
+
     const profile = await StudentProfile.create({
       userId: req.user._id,
-      resume: req.file ? req.file.path : "",
+      resume,
+      profilePhoto,
       linkedin,
       github,
       leetcode,
@@ -18,24 +23,45 @@ export const createProfile = async (req, res) => {
   }
 };
 
+// ✅ GET PROFILE
 export const getProfile = async (req, res) => {
-  const profile = await StudentProfile.findOne({ userId: req.user._id });
+  const profile = await StudentProfile.findOne({
+    userId: req.user._id,
+  });
+
   res.json(profile);
 };
 
+// ✅ UPDATE PROFILE
 export const updateProfile = async (req, res) => {
-  const profile = await StudentProfile.findOne({ userId: req.user._id });
+  try {
+    const profile = await StudentProfile.findOne({
+      userId: req.user._id,
+    });
 
-  if (!profile) return res.status(404).json({ message: "Not found" });
+    if (!profile) {
+      return res.status(404).json({ message: "Not found" });
+    }
 
-  const { linkedin, github, leetcode } = req.body;
+    const { linkedin, github, leetcode } = req.body;
 
-  if (linkedin) profile.linkedin = linkedin;
-  if (github) profile.github = github;
-  if (leetcode) profile.leetcode = leetcode;
-  if (req.file) profile.resume = req.file.path;
+    if (linkedin) profile.linkedin = linkedin;
+    if (github) profile.github = github;
+    if (leetcode) profile.leetcode = leetcode;
 
-  await profile.save();
+    // 🔥 HANDLE FILES
+    if (req.files?.resume) {
+      profile.resume = req.files.resume[0].path;
+    }
 
-  res.json(profile);
+    if (req.files?.profilePhoto) {
+      profile.profilePhoto = req.files.profilePhoto[0].path;
+    }
+
+    await profile.save();
+
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

@@ -21,7 +21,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/profile", authMiddleware, isStudent, upload.single("resume"), createProfile);
+router.post("/profile", authMiddleware, isStudent, upload.fields([
+  { name: "resume", maxCount: 1 },
+  { name: "profilePhoto", maxCount: 1 },
+]), createProfile);
 router.get("/profile", authMiddleware, isStudent, getProfile);
 router.put("/profile", authMiddleware, isStudent, upload.single("resume"), updateProfile);
 

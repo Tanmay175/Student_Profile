@@ -14,30 +14,47 @@ import ProfessorDashboard from "../pages/professor/Dashboard";
 import StudentsList from "../pages/professor/StudentsList";
 import StudentDetails from "../pages/professor/StudentDetails";
 
-// Layout
+// Layout + Protection
 import Layout from "../components/Layout";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth */}
+
+        {/* Public */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* Student */}
-        <Route element={<Layout role="student" />}>
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/profile" element={<StudentProfile />} />
-          <Route path="/student/edit" element={<EditProfile />} />
+        <Route
+          path="/student/*"
+          element={
+            <ProtectedRoute role="student">
+              <Layout role="student" />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfile />} />
+          <Route path="edit" element={<EditProfile />} />
         </Route>
 
         {/* Professor */}
-        <Route element={<Layout role="professor" />}>
-          <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
-          <Route path="/professor/batch/:year" element={<StudentsList />} />
-          <Route path="/professor/student/:id" element={<StudentDetails />} />
+        <Route
+          path="/professor/*"
+          element={
+            <ProtectedRoute role="professor">
+              <Layout role="professor" />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<ProfessorDashboard />} />
+          <Route path="batch/:year" element={<StudentsList />} />
+          <Route path="student/:id" element={<StudentDetails />} />
         </Route>
+
       </Routes>
     </BrowserRouter>
   );

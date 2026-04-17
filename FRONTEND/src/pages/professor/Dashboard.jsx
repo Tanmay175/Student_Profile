@@ -1,7 +1,33 @@
+import { useEffect, useState } from "react";
+import { getBatches } from "../../services/professorService";
 import { Link } from "react-router-dom";
 
 function ProfessorDashboard() {
-  const batches = ["2024", "2025", "2026"];
+  const [batches, setBatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      try {
+        const data = await getBatches();
+        setBatches(data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBatches();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center mt-10">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <div>

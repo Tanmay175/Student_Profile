@@ -1,15 +1,167 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import {
+  getProfile,
+  createProfile,
+  updateProfile,
+} from "../../services/studentService";
+
 function EditProfile() {
+  const [form, setForm] = useState({
+    linkedin: "",
+    github: "",
+    leetcode: "",
+  });
+
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [profileExists, setProfileExists] = useState(false); // ⭐
+  const [photo, setPhoto] = useState(null);
+
+  const navigate = useNavigate();
+
+  // ✅ FETCH PROFILE ON LOAD
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await getProfile();
+
+        if (data) {
+          setProfileExists(true);
+
+          setForm({
+            linkedin: data.linkedin || "",
+            github: data.github || "",
+            leetcode: data.leetcode || "",
+          });
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const isValidURL = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+
+      if (!form.linkedin.includes("linkedin.com")) {
+  return toast.error("Enter valid LinkedIn link ❌");
+}
+
+      if (!form.github.includes("github.com")) {
+  return toast.error("Enter valid GitHub link ❌");
+}
+
+      if (!form.leetcode.includes("leetcode.com")) {
+  return toast.error("Enter valid LeetCode link ❌");
+}
+
+      formData.append("linkedin", form.linkedin);
+      formData.append("github", form.github);
+      formData.append("leetcode", form.leetcode);
+      if (photo) {
+        formData.append("profilePhoto", photo);
+      }
+
+      if (file) {
+        formData.append("resume", file);
+      }
+
+      // 🔥 CORRECT LOGIC
+      if (profileExists) {
+        await updateProfile(formData);
+        toast.success("Profile updated ✅");
+      } else {
+        await createProfile(formData);
+        toast.success("Profile created ✅");
+      }
+
+      navigate("/student/profile");
+
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed ❌");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-xl">
-      <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
+      <h2 className="text-2xl font-bold mb-4">
+        {profileExists ? "Edit Profile" : "Create Profile"}
+      </h2>
 
-      <input placeholder="LinkedIn" className="input input-bordered w-full mb-3" />
-      <input placeholder="GitHub" className="input input-bordered w-full mb-3" />
-      <input placeholder="LeetCode" className="input input-bordered w-full mb-3" />
+      <input
+        type="file"
+        className="file-input file-input-bordered w-full mb-3"
+        onChange={(e) => setPhoto(e.target.files[0])}
+      />
 
-      <input type="file" className="file-input file-input-bordered w-full mb-3" />
+      <input
+        name="linkedin"
+        value={form.linkedin}
+        placeholder="LinkedIn"
+        className="input input-bordered w-full mb-3"
+        onChange={handleChange}
+      />
 
-      <button className="btn btn-success w-full">Save</button>
+      <input
+        name="github"
+        value={form.github}
+        placeholder="GitHub"
+        className="input input-bordered w-full mb-3"
+        onChange={handleChange}
+      />
+
+      <input
+        name="leetcode"
+        value={form.leetcode}
+        placeholder="LeetCode"
+        className="input input-bordered w-full mb-3"
+        onChange={handleChange}
+      />
+
+      <input
+        type="file"
+        className="file-input file-input-bordered w-full mb-3"
+        onChange={handleFileChange}
+      />
+
+      <button
+        onClick={handleSubmit}
+        className="btn btn-success w-full"
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="loading loading-spinner"></span>
+        ) : (
+          "Save"
+        )}
+      </button>
     </div>
   );
 }
