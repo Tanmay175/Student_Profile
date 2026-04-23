@@ -14,3 +14,8 @@ export const getStudentDetails = async (id) => {
   const res = await api.get(`/api/professor/student/${id}`);
   return res.data;
 };
+
+export const getAllStudents = async () => {
+  const res = await api.get("/api/professor/students");
+  return res.data;
+};

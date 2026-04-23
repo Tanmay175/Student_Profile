@@ -11,6 +11,8 @@ const studentProfileSchema = new mongoose.Schema(
     linkedin: String,
     github: String,
     leetcode: String,
+    name:String,
+    batch:String,
     profilePhoto: {
     type: String,
     default: "",

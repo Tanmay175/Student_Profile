@@ -24,3 +24,27 @@ export const getStudentDetails = async (req, res) => {
 
   res.json({ student, profile });
 };
+
+export const getAllStudents = async (req, res) => {
+  try {
+    const students = await User.find({ role: "student" }).select("-password");
+
+    const result = await Promise.all(
+      students.map(async (student) => {
+        const profile = await StudentProfile.findOne({
+          userId: student._id,
+        });
+
+        return {
+          student,
+          profile,
+        };
+      })
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};

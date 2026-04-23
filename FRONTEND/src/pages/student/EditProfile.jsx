@@ -13,6 +13,8 @@ function EditProfile() {
     linkedin: "",
     github: "",
     leetcode: "",
+    name:"",
+    batch:""
   });
 
   const [file, setFile] = useState(null);
@@ -115,41 +117,60 @@ function EditProfile() {
         {profileExists ? "Edit Profile" : "Create Profile"}
       </h2>
 
-      <input
-        type="file"
-        className="file-input file-input-bordered w-full mb-3"
-        onChange={(e) => setPhoto(e.target.files[0])}
-      />
+     {/* 🔥 Profile Photo */}
+<div className="flex items-center gap-3 mb-3">
+  <label className="w-32 font-medium">Profile_Photo:-</label>
+  <input
+    type="file"
+    accept="image/*"
+    className="file-input file-input-bordered w-full"
+    onChange={(e) => setPhoto(e.target.files[0])}
+  />
+</div>
 
-      <input
-        name="linkedin"
-        value={form.linkedin}
-        placeholder="LinkedIn"
-        className="input input-bordered w-full mb-3"
-        onChange={handleChange}
-      />
+{/* 🔥 LinkedIn */}
+<div className="flex items-center gap-3 mb-3">
+  <label className="w-32 font-medium">LinkedIn :-</label>
+  <input
+    name="linkedin"
+    value={form.linkedin}
+    className="input input-bordered w-full"
+    onChange={handleChange}
+  />
+</div>
 
-      <input
-        name="github"
-        value={form.github}
-        placeholder="GitHub"
-        className="input input-bordered w-full mb-3"
-        onChange={handleChange}
-      />
+{/* 🔥 GitHub */}
+<div className="flex items-center gap-3 mb-3">
+  <label className="w-32 font-medium">GitHub :-</label>
+  <input
+    name="github"
+    value={form.github}
+    className="input input-bordered w-full"
+    onChange={handleChange}
+  />
+</div>
 
-      <input
-        name="leetcode"
-        value={form.leetcode}
-        placeholder="LeetCode"
-        className="input input-bordered w-full mb-3"
-        onChange={handleChange}
-      />
+{/* 🔥 LeetCode */}
+<div className="flex items-center gap-3 mb-3">
+  <label className="w-32 font-medium">LeetCode :-</label>
+  <input
+    name="leetcode"
+    value={form.leetcode}
+    className="input input-bordered w-full"
+    onChange={handleChange}
+  />
+</div>
 
-      <input
-        type="file"
-        className="file-input file-input-bordered w-full mb-3"
-        onChange={handleFileChange}
-      />
+{/* 🔥 Resume */}
+<div className="flex items-center gap-3 mb-4">
+  <label className="w-32 font-medium">Resume :-</label>
+  <input
+    type="file"
+    accept=".pdf"
+    className="file-input file-input-bordered w-full"
+    onChange={handleFileChange}
+  />
+</div>
 
       <button
         onClick={handleSubmit}

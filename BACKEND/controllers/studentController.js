@@ -15,6 +15,8 @@ export const createProfile = async (req, res) => {
       linkedin,
       github,
       leetcode,
+      name:req.user.name,
+      batch:req.user.batch
     });
 
     res.status(201).json(profile);
@@ -43,11 +45,13 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    const { linkedin, github, leetcode } = req.body;
+    const { linkedin, github, leetcode} = req.body;
 
     if (linkedin) profile.linkedin = linkedin;
     if (github) profile.github = github;
     if (leetcode) profile.leetcode = leetcode;
+    if (name) profile.name = name;
+    if (batch) profile.batch = batch;
 
     // 🔥 HANDLE FILES
     if (req.files?.resume) {
@@ -62,6 +66,7 @@ export const updateProfile = async (req, res) => {
 
     res.json(profile);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.log("ERROR 👉", error); 
+  res.status(500).json({ message: error.message });
   }
 };
