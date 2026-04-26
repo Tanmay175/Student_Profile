@@ -1,99 +1,70 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-import {
-  getProfile,
-  createProfile,
-  updateProfile,
-} from "../../services/studentService";
+import { getProfile, createProfile, updateProfile } from "../../services/studentService";
 
 function EditProfile() {
   const [form, setForm] = useState({
     linkedin: "",
     github: "",
     leetcode: "",
-    name:"",
-    batch:""
+    bio: "",        // ✅
+    rollNo: "",     // ✅
   });
 
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [profileExists, setProfileExists] = useState(false); // ⭐
   const [photo, setPhoto] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
 
   const navigate = useNavigate();
 
-  // ✅ FETCH PROFILE ON LOAD
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await getProfile();
-
         if (data) {
           setProfileExists(true);
-
           setForm({
             linkedin: data.linkedin || "",
             github: data.github || "",
             leetcode: data.leetcode || "",
+            bio: data.bio || "",         // ✅
+            rollNo: data.rollNo || "",   // ✅
           });
         }
       } catch (err) {
         console.log(err);
       }
     };
-
     fetchProfile();
   }, []);
 
-  const isValidURL = (url) => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
 
+      if (!form.linkedin.includes("linkedin.com"))
+        return toast.error("Enter valid LinkedIn link ❌");
+      if (!form.github.includes("github.com"))
+        return toast.error("Enter valid GitHub link ❌");
+      if (!form.leetcode.includes("leetcode.com"))
+        return toast.error("Enter valid LeetCode link ❌");
+
       const formData = new FormData();
-
-      if (!form.linkedin.includes("linkedin.com")) {
-  return toast.error("Enter valid LinkedIn link ❌");
-}
-
-      if (!form.github.includes("github.com")) {
-  return toast.error("Enter valid GitHub link ❌");
-}
-
-      if (!form.leetcode.includes("leetcode.com")) {
-  return toast.error("Enter valid LeetCode link ❌");
-}
-
       formData.append("linkedin", form.linkedin);
       formData.append("github", form.github);
       formData.append("leetcode", form.leetcode);
-      if (photo) {
-        formData.append("profilePhoto", photo);
-      }
+      formData.append("bio", form.bio);         // ✅
+      formData.append("rollNo", form.rollNo);   // ✅
 
-      if (file) {
-        formData.append("resume", file);
-      }
+      if (photo) formData.append("profilePhoto", photo);
+      if (file) formData.append("resume", file);
 
-      // 🔥 CORRECT LOGIC
       if (profileExists) {
         await updateProfile(formData);
         toast.success("Profile updated ✅");
@@ -103,7 +74,6 @@ function EditProfile() {
       }
 
       navigate("/student/profile");
-
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed ❌");
     } finally {
@@ -117,71 +87,88 @@ function EditProfile() {
         {profileExists ? "Edit Profile" : "Create Profile"}
       </h2>
 
-     {/* 🔥 Profile Photo */}
-<div className="flex items-center gap-3 mb-3">
-  <label className="w-32 font-medium">Profile_Photo:-</label>
-  <input
-    type="file"
-    accept="image/*"
-    className="file-input file-input-bordered w-full"
-    onChange={(e) => setPhoto(e.target.files[0])}
-  />
-</div>
+      {/* Profile Photo */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">Photo</label>
+        <input
+          type="file"
+          accept="image/*"
+          className="file-input file-input-bordered w-full"
+          onChange={(e) => setPhoto(e.target.files[0])}
+        />
+      </div>
 
-{/* 🔥 LinkedIn */}
-<div className="flex items-center gap-3 mb-3">
-  <label className="w-32 font-medium">LinkedIn :-</label>
-  <input
-    name="linkedin"
-    value={form.linkedin}
-    className="input input-bordered w-full"
-    onChange={handleChange}
-  />
-</div>
+      {/* Roll Number ✅ */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">Roll No</label>
+        <input
+          name="rollNo"
+          value={form.rollNo}
+          placeholder="e.g. 21CS045"
+          className="input input-bordered w-full"
+          onChange={handleChange}
+        />
+      </div>
 
-{/* 🔥 GitHub */}
-<div className="flex items-center gap-3 mb-3">
-  <label className="w-32 font-medium">GitHub :-</label>
-  <input
-    name="github"
-    value={form.github}
-    className="input input-bordered w-full"
-    onChange={handleChange}
-  />
-</div>
+      {/* Bio ✅ */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">Bio</label>
+        <textarea
+          name="bio"
+          value={form.bio}
+          placeholder="Write a short bio about yourself..."
+          className="textarea textarea-bordered w-full"
+          rows={3}
+          onChange={handleChange}
+        />
+      </div>
 
-{/* 🔥 LeetCode */}
-<div className="flex items-center gap-3 mb-3">
-  <label className="w-32 font-medium">LeetCode :-</label>
-  <input
-    name="leetcode"
-    value={form.leetcode}
-    className="input input-bordered w-full"
-    onChange={handleChange}
-  />
-</div>
+      {/* LinkedIn */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">LinkedIn</label>
+        <input
+          name="linkedin"
+          value={form.linkedin}
+          className="input input-bordered w-full"
+          onChange={handleChange}
+        />
+      </div>
 
-{/* 🔥 Resume */}
-<div className="flex items-center gap-3 mb-4">
-  <label className="w-32 font-medium">Resume :-</label>
-  <input
-    type="file"
-    accept=".pdf"
-    className="file-input file-input-bordered w-full"
-    onChange={handleFileChange}
-  />
-</div>
+      {/* GitHub */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">GitHub</label>
+        <input
+          name="github"
+          value={form.github}
+          className="input input-bordered w-full"
+          onChange={handleChange}
+        />
+      </div>
 
-      <button
-        onClick={handleSubmit}
-        className="btn btn-success w-full"
-        disabled={loading}
-      >
-        {loading ? (
-          <span className="loading loading-spinner"></span>
-        ) : (
-          "Save"
-        )}
+      {/* LeetCode */}
+      <div className="flex items-center gap-3 mb-3">
+        <label className="w-32 font-medium">LeetCode</label>
+        <input
+          name="leetcode"
+          value={form.leetcode}
+          className="input input-bordered w-full"
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* Resume */}
+      <div className="flex items-center gap-3 mb-4">
+        <label className="w-32 font-medium">Resume</label>
+        <input
+          type="file"
+          accept=".pdf"
+          className="file-input file-input-bordered w-full"
+          onChange={(e) => setFile(e.target.files[0])}
+        />
+      </div>
+
+      <button onClick={handleSubmit} className="btn btn-success w-full" disabled={loading}>
+        {loading ? <span className="loading loading-spinner"></span> : "Save"}
       </button>
     </div>
   );

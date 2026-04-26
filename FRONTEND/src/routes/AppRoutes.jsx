@@ -13,6 +13,7 @@ import EditProfile from "../pages/student/EditProfile";
 import ProfessorDashboard from "../pages/professor/Dashboard";
 import StudentsList from "../pages/professor/StudentsList";
 import StudentDetails from "../pages/professor/StudentDetails";
+import Leaderboard from "../pages/professor/Leaderboard";   // ✅ ADD THIS LINE
 
 // Layout + Protection
 import Layout from "../components/Layout";
@@ -53,6 +54,7 @@ function AppRoutes() {
           <Route path="dashboard" element={<ProfessorDashboard />} />
           <Route path="batch/:year" element={<StudentsList />} />
           <Route path="student/:id" element={<StudentDetails />} />
+          <Route path="leaderboard/:batch" element={<Leaderboard />} />  {/* ✅ ADD THIS LINE */}
         </Route>
 
       </Routes>

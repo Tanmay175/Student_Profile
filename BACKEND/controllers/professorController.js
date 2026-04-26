@@ -56,3 +56,26 @@ export const getAllStudents = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getStudentsByBatchWithProfiles = async (req, res) => {
+  try {
+    const students = await User.find({
+      role: "student",
+      batch: req.params.batch,
+    }).select("-password");
+
+    const result = await Promise.all(
+      students.map(async (student) => {
+        const profile = await StudentProfile.findOne({ userId: student._id });
+        return {
+          student,
+          profile: profile || { github: "", leetcode: "", profilePhoto: "" },
+        };
+      })
+    );
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

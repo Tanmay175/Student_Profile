@@ -14,6 +14,7 @@ function Sidebar({ role }) {
         {role === "professor" && (
           <>
             <li><Link to="/professor/dashboard">Batches</Link></li>
+            {/* <li><Link to="/professor/leaderboard">🏆 Leaderboard</Link></li>  ✅ ADD THIS LINE */}
           </>
         )}
       </ul>

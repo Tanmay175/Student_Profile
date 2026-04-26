@@ -16,16 +16,11 @@ export const getStudentDetails = async (id) => {
 };
 
 export const getAllStudents = async () => {
-  const token = localStorage.getItem("token");
-    console.log("TOKEN:", token); // 👈 debug
-  const res = await axios.get(
-    "http://localhost:5000/api/professor/students",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await api.get("/api/professor/students");
+  return res.data;
+};
 
+export const getStudentsByBatchWithProfiles = async (batch) => {
+  const res = await api.get(`/api/professor/batch-leaderboard/${batch}`);
   return res.data;
 };

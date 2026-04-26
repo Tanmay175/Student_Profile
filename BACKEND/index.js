@@ -12,9 +12,13 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ✅ FIX: restrict CORS to your frontend URL only
+app.use(cors({
+  origin: ["http://localhost:5173", process.env.CLIENT_URL].filter(Boolean),
+  credentials: true,
+}));
 
+app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 app.use("/api/auth", authRoutes);
@@ -25,25 +29,18 @@ app.get("/api/leetcode/:username", async (req, res) => {
   try {
     const { username } = req.params;
 
-    if (!username) {
-      return res.status(400).json({ error: "Username required" });
-    }
+    if (!username) return res.status(400).json({ error: "Username required" });
 
+    // const response = await fetch(`https://alfa-leetcode-api.onrender.com/${username}`);
     const response = await fetch(
-      `https://alfa-leetcode-api.onrender.com/${username}`
-    );
+  `https://alfa-leetcode-api.onrender.com/${username}/solved`
+);
 
-    if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: "LeetCode API failed" });
-    }
+    if (!response.ok) return res.status(response.status).json({ error: "LeetCode API failed" });
 
     const data = await response.json();
-
     res.json(data);
   } catch (error) {
-    console.log("LeetCode Error:", error);
     res.status(500).json({ error: "Failed to fetch LeetCode data" });
   }
 });

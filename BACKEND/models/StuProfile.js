@@ -17,6 +17,14 @@ const studentProfileSchema = new mongoose.Schema(
     type: String,
     default: "",
     },
+      bio: {                          // ✅ NEW
+      type: String,
+      default: "",
+    },
+    rollNo: {                       // ✅ NEW
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
