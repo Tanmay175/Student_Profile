@@ -16,6 +16,16 @@ export const getStudentDetails = async (id) => {
 };
 
 export const getAllStudents = async () => {
-  const res = await api.get("/api/professor/students");
+  const token = localStorage.getItem("token");
+    console.log("TOKEN:", token); // 👈 debug
+  const res = await axios.get(
+    "http://localhost:5000/api/professor/students",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
   return res.data;
 };

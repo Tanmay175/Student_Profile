@@ -54,9 +54,7 @@ function StudentDetails() {
 
     const fetchLC = async () => {
       try {
-        const res = await fetch(
-          `https://leetcode-stats-api.herokuapp.com/${username}`
-        );
+        const res = await fetch(`http://localhost:5000/api/leetcode/${username}`);
         const json = await res.json();
         setLcData(json);
       } catch (err) {

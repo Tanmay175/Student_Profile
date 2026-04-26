@@ -8,31 +8,40 @@ function Leaderboard() {
     const fetchAll = async () => {
       try {
         const res = await getAllStudents();
+        console.log("STUDENTS API RESPONSE:", res);
 
         const enriched = await Promise.all(
           res.map(async (s) => {
+              console.log("Student:", s);
             let githubData = {};
             let lcData = {};
 
-            // 🔹 GitHub
+            // GitHub
             if (s.profile?.github) {
-              const username = s.profile.github.split("github.com/")[1];
-              const g = await fetch(
-                `https://api.github.com/users/${username}`
-              );
-              githubData = await g.json();
-            }
+  const username = s.profile.github
+    ?.split("github.com/")[1]
+    ?.replace("/", "");
 
-            // 🔹 LeetCode
-            if (s.profile?.leetcode) {
-              const username = s.profile.leetcode.split("leetcode.com/")[1];
-              const l = await fetch(
-                `https://leetcode-stats-api.herokuapp.com/${username}`
-              );
-              lcData = await l.json();
-            }
+  if (username) {
+    const g = await fetch(`https://api.github.com/users/${username}`);
+    githubData = await g.json().catch(() => ({}));
+  }
+}
 
-            // 🔥 SCORE CALCULATION
+if (s.profile?.leetcode) {
+  const username = s.profile.leetcode
+    ?.split("leetcode.com/")[1]
+    ?.replace("/", "");
+
+  if (username) {
+    const l = await fetch(
+      `http://localhost:5000/api/leetcode/${username}`
+    );
+    lcData = await l.json().catch(() => ({}));
+  }
+}
+
+            // SCORE CALCULATION (must be OUTSIDE if)
             const score =
               (lcData.totalSolved || 0) * 2 +
               (githubData.public_repos || 0) * 3 +
@@ -47,9 +56,7 @@ function Leaderboard() {
           })
         );
 
-        // 🔥 SORT DESC
         enriched.sort((a, b) => b.score - a.score);
-
         setStudents(enriched);
       } catch (err) {
         console.log(err);
@@ -65,7 +72,6 @@ function Leaderboard() {
 
       <div className="overflow-x-auto">
         <table className="table w-full bg-base-100 shadow rounded-xl">
-
           <thead>
             <tr>
               <th>Rank</th>
@@ -81,7 +87,6 @@ function Leaderboard() {
           <tbody>
             {students.map((s, i) => (
               <tr key={s._id} className="hover">
-
                 <td>
                   {i === 0 && "🥇"}
                   {i === 1 && "🥈"}
@@ -96,26 +101,22 @@ function Leaderboard() {
                       "https://i.pravatar.cc/150"
                     }
                     className="w-10 h-10 rounded-full"
+                    alt="profile"
                   />
                   {s.student.name}
                 </td>
 
                 <td>{s.student.batch}</td>
-
                 <td>{s.lcData.totalSolved || 0}</td>
-
                 <td>{s.githubData.public_repos || 0}</td>
-
                 <td>{s.githubData.followers || 0}</td>
 
                 <td className="font-bold text-green-500">
                   {s.score}
                 </td>
-
               </tr>
             ))}
           </tbody>
-
         </table>
       </div>
     </div>

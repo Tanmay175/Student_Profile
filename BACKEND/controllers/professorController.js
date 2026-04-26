@@ -27,6 +27,8 @@ export const getStudentDetails = async (req, res) => {
 
 export const getAllStudents = async (req, res) => {
   try {
+        console.log("HIT GET ALL STUDENTS");
+
     const students = await User.find({ role: "student" }).select("-password");
 
     const result = await Promise.all(
@@ -35,9 +37,15 @@ export const getAllStudents = async (req, res) => {
           userId: student._id,
         });
 
+        console.log(students);
+
         return {
           student,
-          profile,
+          profile: profile || {
+            github: "",
+            leetcode: "",
+            profilePhoto: "",
+          },
         };
       })
     );

@@ -1,4 +1,5 @@
 import StudentProfile from "../models/StuProfile.js";
+import User from "../models/User.js";   // ✅ ADD THIS
 
 // ✅ CREATE PROFILE
 export const createProfile = async (req, res) => {
@@ -27,11 +28,26 @@ export const createProfile = async (req, res) => {
 
 // ✅ GET PROFILE
 export const getProfile = async (req, res) => {
-  const profile = await StudentProfile.findOne({
-    userId: req.user._id,
-  });
+  try {
+    const profile = await StudentProfile.findOne({
+      userId: req.user._id,
+    });
 
-  res.json(profile);
+    const user = await User.findById(req.user._id);
+
+    if (!profile) {
+      return res.json(null);
+    }
+
+    res.json({
+      ...profile._doc,
+      name: user.name,
+      batch: user.batch,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // ✅ UPDATE PROFILE

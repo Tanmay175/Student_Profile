@@ -12,6 +12,7 @@ function Profile() {
       try {
         const data = await getProfile();
         setProfile(data);
+        console.log(data) // it is coming null why
       } catch (err) {
         console.log(err);
       }
