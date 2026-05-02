@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import professorRoutes from "./routes/professorRoutes.js";
+import certificateRoutes from "./routes/certificateRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -24,6 +25,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/professor", professorRoutes);
+app.use("/api/certificates", certificateRoutes);
 
 app.get("/api/leetcode/:username", async (req, res) => {
   try {

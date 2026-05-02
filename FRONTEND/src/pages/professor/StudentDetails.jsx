@@ -1,3 +1,4 @@
+import CertificatesSection from "../../components/CertificatesSection";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getStudentDetails } from "../../services/professorService";
@@ -171,6 +172,7 @@ function StudentDetails() {
           </a>
         </div>
       )}
+      <CertificatesSection studentId={student?._id} isOwner={false} />
 
     </div>
   );

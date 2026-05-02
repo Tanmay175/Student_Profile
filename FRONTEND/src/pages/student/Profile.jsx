@@ -3,6 +3,7 @@ import { getProfile } from "../../services/studentService";
 import { Link } from "react-router-dom";
 import { FaGithub, FaLinkedin, FaCode } from "react-icons/fa";
 import { GitHubCalendar } from "react-github-calendar";
+import CertificatesSection from "../../components/CertificatesSection";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -118,6 +119,9 @@ function Profile() {
           ></iframe>
         </div>
       )}
+
+      {/* CERTIFICATES */}
+      <CertificatesSection studentId={profile?.userId} isOwner={true} />
 
       {/* EDIT */}
       <div className="mt-6 text-center">
