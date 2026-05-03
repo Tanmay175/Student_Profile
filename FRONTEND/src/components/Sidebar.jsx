@@ -8,6 +8,7 @@ function Sidebar({ role }) {
           <>
             <li><Link to="/student/dashboard">Dashboard</Link></li>
             <li><Link to="/student/profile">Profile</Link></li>
+            <li><Link to="/student/change-password">🔒 Change Password</Link></li> {/* ✅ NEW */}
           </>
         )}
 

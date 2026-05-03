@@ -4,11 +4,15 @@ import {
   uploadCertificate,
   updateCertificate,
   deleteCertificate,
+  getCertificateCount, // ✅ NEW
 } from "../controllers/certificateController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { isStudent } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
+
+// GET  /api/certificates/count/:studentId  — ✅ NEW (for leaderboard scoring)
+router.get("/count/:studentId", authMiddleware, getCertificateCount);
 
 // GET  /api/certificates/:studentId
 router.get("/:studentId", authMiddleware, getCertificates);

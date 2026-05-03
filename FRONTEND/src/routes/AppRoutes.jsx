@@ -8,6 +8,7 @@ import Register from "../pages/auth/Register";
 import StudentDashboard from "../pages/student/Dashboard";
 import StudentProfile from "../pages/student/Profile";
 import EditProfile from "../pages/student/EditProfile";
+import ChangePassword from "../pages/student/ChangePassword"; // ✅ NEW
 
 // Professor
 import ProfessorDashboard from "../pages/professor/Dashboard";
@@ -40,6 +41,7 @@ function AppRoutes() {
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="edit" element={<EditProfile />} />
+          <Route path="change-password" element={<ChangePassword />} /> {/* ✅ NEW */}
         </Route>
 
         {/* Professor */}

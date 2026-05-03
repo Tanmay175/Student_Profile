@@ -20,6 +20,18 @@ const toEmbedLink = (link) => {
   }
 };
 
+// GET /api/certificates/count/:studentId  ✅ NEW — used by leaderboard
+export const getCertificateCount = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const count = await Certificate.countByStudent(studentId);
+    res.json({ success: true, count });
+  } catch (e) {
+    console.error("getCertificateCount:", e);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 // GET /api/certificates/:studentId
 export const getCertificates = async (req, res) => {
   try {
