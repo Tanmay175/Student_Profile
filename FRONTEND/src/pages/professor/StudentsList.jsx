@@ -1,6 +1,7 @@
+// FRONTEND/src/pages/professor/StudentsList.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getStudentsByBatch } from "../../services/professorService";
+import { getStudentsByBatchWithProfiles } from "../../services/professorService";
 
 function StudentsList() {
   const { year } = useParams();
@@ -11,7 +12,8 @@ function StudentsList() {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const data = await getStudentsByBatch(year);
+        // ✅ FIXED: use getStudentsByBatchWithProfiles so rollNo is available
+        const data = await getStudentsByBatchWithProfiles(year);
         setStudents(data);
       } catch (error) {
         console.log(error);
@@ -22,12 +24,13 @@ function StudentsList() {
     fetchStudents();
   }, [year]);
 
-  // ✅ Filter by name OR roll number
-  const filtered = students.filter((stu) => {
+  // ✅ Now correctly searches name OR rollNo from profile
+  const filtered = students.filter(({ student, profile }) => {
     const q = search.toLowerCase();
     return (
-      stu.name.toLowerCase().includes(q) ||
-      (stu.rollNo && stu.rollNo.toLowerCase().includes(q))
+      student.name.toLowerCase().includes(q) ||
+      student.email.toLowerCase().includes(q) ||
+      (profile?.rollNo && profile.rollNo.toLowerCase().includes(q))
     );
   });
 
@@ -51,7 +54,7 @@ function StudentsList() {
       {/* Search bar */}
       <input
         type="text"
-        placeholder="Search by name or roll number..."
+        placeholder="Search by name, email or roll number..."
         className="input input-bordered w-full mb-4"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -61,13 +64,16 @@ function StudentsList() {
         <p className="text-gray-500">No student found.</p>
       ) : (
         <div className="space-y-2">
-          {filtered.map((stu) => (
-            <Link to={`/professor/student/${stu._id}`} key={stu._id}>
+          {filtered.map(({ student, profile }) => (
+            <Link to={`/professor/student/${student._id}`} key={student._id}>
               <div className="card p-3 bg-base-100 shadow hover:bg-base-200 flex justify-between items-center">
-                <span>{stu.name} ({stu.email})</span>
-                {/* ✅ Show roll number if exists */}
-                {stu.rollNo && (
-                  <span className="badge badge-outline">{stu.rollNo}</span>
+                <div>
+                  <p className="font-medium">{student.name}</p>
+                  <p className="text-sm text-gray-500">{student.email}</p>
+                </div>
+                {/* ✅ Now correctly shows rollNo from profile */}
+                {profile?.rollNo && (
+                  <span className="badge badge-outline">{profile.rollNo}</span>
                 )}
               </div>
             </Link>

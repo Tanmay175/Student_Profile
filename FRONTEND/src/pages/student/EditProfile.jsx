@@ -8,11 +8,11 @@ function EditProfile() {
     linkedin: "",
     github: "",
     leetcode: "",
-    bio: "",        // ✅
-    rollNo: "",     // ✅
+    bio: "",
+    rollNo: "",
+    resumeLink: "",   // ✅ Drive link instead of file
   });
 
-  const [file, setFile] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
@@ -29,8 +29,9 @@ function EditProfile() {
             linkedin: data.linkedin || "",
             github: data.github || "",
             leetcode: data.leetcode || "",
-            bio: data.bio || "",         // ✅
-            rollNo: data.rollNo || "",   // ✅
+            bio: data.bio || "",
+            rollNo: data.rollNo || "",
+            resumeLink: data.resume || "",   // pre-fill existing drive link
           });
         }
       } catch (err) {
@@ -55,15 +56,19 @@ function EditProfile() {
       if (!form.leetcode.includes("leetcode.com"))
         return toast.error("Enter valid LeetCode link ❌");
 
+      // ✅ Validate Drive link if provided
+      if (form.resumeLink && !form.resumeLink.includes("drive.google.com"))
+        return toast.error("Enter a valid Google Drive link for resume ❌");
+
       const formData = new FormData();
       formData.append("linkedin", form.linkedin);
       formData.append("github", form.github);
       formData.append("leetcode", form.leetcode);
-      formData.append("bio", form.bio);         // ✅
-      formData.append("rollNo", form.rollNo);   // ✅
+      formData.append("bio", form.bio);
+      formData.append("rollNo", form.rollNo);
+      formData.append("resumeLink", form.resumeLink);  // ✅ send as text
 
       if (photo) formData.append("profilePhoto", photo);
-      if (file) formData.append("resume", file);
 
       if (profileExists) {
         await updateProfile(formData);
@@ -98,7 +103,7 @@ function EditProfile() {
         />
       </div>
 
-      {/* Roll Number ✅ */}
+      {/* Roll Number */}
       <div className="flex items-center gap-3 mb-3">
         <label className="w-32 font-medium">Roll No</label>
         <input
@@ -110,7 +115,7 @@ function EditProfile() {
         />
       </div>
 
-      {/* Bio ✅ */}
+      {/* Bio */}
       <div className="flex items-center gap-3 mb-3">
         <label className="w-32 font-medium">Bio</label>
         <textarea
@@ -129,6 +134,7 @@ function EditProfile() {
         <input
           name="linkedin"
           value={form.linkedin}
+          placeholder="https://linkedin.com/in/..."
           className="input input-bordered w-full"
           onChange={handleChange}
         />
@@ -140,6 +146,7 @@ function EditProfile() {
         <input
           name="github"
           value={form.github}
+          placeholder="https://github.com/..."
           className="input input-bordered w-full"
           onChange={handleChange}
         />
@@ -151,23 +158,34 @@ function EditProfile() {
         <input
           name="leetcode"
           value={form.leetcode}
+          placeholder="https://leetcode.com/u/..."
           className="input input-bordered w-full"
           onChange={handleChange}
         />
       </div>
 
-      {/* Resume */}
-      <div className="flex items-center gap-3 mb-4">
-        <label className="w-32 font-medium">Resume</label>
-        <input
-          type="file"
-          accept=".pdf"
-          className="file-input file-input-bordered w-full"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
+      {/* Resume — Google Drive Link */}
+      <div className="flex flex-col gap-1 mb-4">
+        <div className="flex items-center gap-3">
+          <label className="w-32 font-medium">Resume</label>
+          <input
+            name="resumeLink"
+            value={form.resumeLink}
+            placeholder="https://drive.google.com/file/d/..."
+            className="input input-bordered w-full"
+            onChange={handleChange}
+          />
+        </div>
+        <p className="text-xs text-gray-400 ml-32 pl-3">
+          In Google Drive: right-click PDF → Share → Anyone with the link → Copy link
+        </p>
       </div>
 
-      <button onClick={handleSubmit} className="btn btn-success w-full" disabled={loading}>
+      <button
+        onClick={handleSubmit}
+        className="btn btn-success w-full"
+        disabled={loading}
+      >
         {loading ? <span className="loading loading-spinner"></span> : "Save"}
       </button>
     </div>

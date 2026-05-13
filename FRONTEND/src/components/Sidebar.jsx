@@ -1,3 +1,4 @@
+// FRONTEND/src/components/Sidebar.jsx
 import { Link } from "react-router-dom";
 
 function Sidebar({ role }) {
@@ -8,14 +9,16 @@ function Sidebar({ role }) {
           <>
             <li><Link to="/student/dashboard">Dashboard</Link></li>
             <li><Link to="/student/profile">Profile</Link></li>
-            <li><Link to="/student/change-password">🔒 Change Password</Link></li> {/* ✅ NEW */}
+            <li><Link to="/student/change-password">🔒 Change Password</Link></li>
           </>
         )}
 
         {role === "professor" && (
           <>
             <li><Link to="/professor/dashboard">Batches</Link></li>
-            {/* <li><Link to="/professor/leaderboard">🏆 Leaderboard</Link></li>  ✅ ADD THIS LINE */}
+            {/* ✅ FIXED: was commented out */}
+            {/* Note: leaderboard is per-batch, so link goes to dashboard 
+                where professor picks a batch, then clicks the leaderboard button */}
           </>
         )}
       </ul>
