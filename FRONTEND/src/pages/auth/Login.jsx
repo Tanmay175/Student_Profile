@@ -65,12 +65,14 @@ function Login() {
           Login
         </button>
 
-        <p className="mt-3 text-sm">
-          Don't have an account?{" "}
+        <div className="mt-3 flex justify-between text-sm">
+          <Link to="/forgot-password" className="text-gray-500 hover:text-blue-500">
+            Forgot password?
+          </Link>
           <Link to="/register" className="text-blue-500">
             Register
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

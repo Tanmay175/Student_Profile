@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
-import { createProfile, getProfile, updateProfile } from "../controllers/studentController.js";
+import { createProfile, getProfile, updateProfile, getMyRank } from "../controllers/studentController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { isStudent } from "../middleware/roleMiddleware.js";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
@@ -40,6 +40,7 @@ router.post(
   createProfile
 );
 router.get("/profile", authMiddleware, isStudent, getProfile);
+router.get("/rank", authMiddleware, isStudent, getMyRank);
 router.put(
   "/profile",
   authMiddleware,

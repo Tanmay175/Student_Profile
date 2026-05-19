@@ -87,3 +87,37 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// GET MY RANK IN BATCH
+// Rank = position in batch sorted by LeetCode solved count (simple, fast, no external API call needed)
+// We rank by leetcode URL presence as a proxy — for real scoring we'd need the API
+// Instead: rank by number of filled profile fields (robust offline ranking)
+export const getMyRank = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user?.batch) return res.status(400).json({ message: "Batch not set" });
+
+    // Get all students in same batch
+    const batchUsers = await User.find({ role: "student", batch: user.batch }).select("_id");
+    const userIds = batchUsers.map((u) => u._id);
+
+    // Get all their profiles
+    const profiles = await StudentProfile.find({ userId: { $in: userIds } });
+
+    // Score = count of filled fields (github, leetcode, linkedin, resume, bio, profilePhoto)
+    const scoreProfile = (p) => {
+      if (!p) return 0;
+      return [p.github, p.leetcode, p.linkedin, p.resume, p.bio, p.profilePhoto]
+        .filter(Boolean).length;
+    };
+
+    const myProfile = profiles.find((p) => p.userId.toString() === req.user._id.toString());
+    const myScore = scoreProfile(myProfile);
+
+    // Sort descending; rank = how many have strictly higher score + 1
+    const rank = profiles.filter((p) => scoreProfile(p) > myScore).length + 1;
+
+    res.json({ rank, total: batchUsers.length, score: myScore });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

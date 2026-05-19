@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { FaGithub, FaLinkedin, FaCode } from "react-icons/fa";
 import {GitHubCalendar} from "react-github-calendar";
 import CertificatesSection from "../../components/CertificatesSection";
+import { getGithubUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -19,11 +20,6 @@ function Profile() {
     };
     fetchProfile();
   }, []);
-
-  const getGithubUsername = (url) => {
-    if (!url) return "";
-    return url.split("github.com/")[1]?.replace("/", "");
-  };
 
   const githubUsername = getGithubUsername(profile?.github);
 
@@ -64,7 +60,8 @@ function Profile() {
       {/* PROFILE HEADER */}
       <div className="flex items-center gap-6 bg-base-100 shadow p-6 rounded-xl">
         <img
-          src={profile.profilePhoto || "https://i.pravatar.cc/150"}
+          src={profile.profilePhoto || DEFAULT_AVATAR}
+          onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
           className="w-24 h-24 rounded-full border object-cover"
           alt="Profile"
         />

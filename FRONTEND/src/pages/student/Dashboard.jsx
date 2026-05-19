@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { getProfile } from "../../services/studentService";
 import { Link } from "react-router-dom";
+import { DEFAULT_AVATAR } from "../../utils/profileUtils";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function StudentDashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [rank, setRank] = useState(null);
+  const [batchSize, setBatchSize] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -19,6 +24,27 @@ function StudentDashboard() {
     };
     fetchProfile();
   }, []);
+
+  // Fetch rank once profile is loaded
+  useEffect(() => {
+    if (!profile?.batch) return;
+    const fetchRank = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/api/student/rank`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setRank(data.rank);
+          setBatchSize(data.total);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    fetchRank();
+  }, [profile]);
 
   if (loading) {
     return (
@@ -47,21 +73,33 @@ function StudentDashboard() {
       {/* Profile Card */}
       <div className="bg-base-100 shadow rounded-xl p-6 flex gap-5 items-center">
         <img
-          src={profile.profilePhoto || "https://i.pravatar.cc/150"}
+          src={profile.profilePhoto || DEFAULT_AVATAR}
           className="w-20 h-20 rounded-full border object-cover"
+          onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
         />
-        <div>
+        <div className="flex-1">
           <h2 className="text-xl font-bold">{profile.name}</h2>
           <p className="text-sm text-gray-500">Batch: {profile.batch}</p>
-          {/* ✅ Roll No */}
           {profile.rollNo && (
-            <p className="text-sm text-gray-500">Roll No: <span className="font-semibold">{profile.rollNo}</span></p>
+            <p className="text-sm text-gray-500">
+              Roll No: <span className="font-semibold">{profile.rollNo}</span>
+            </p>
           )}
-          {/* ✅ Bio */}
           {profile.bio && (
             <p className="mt-2 text-sm italic text-gray-400">"{profile.bio}"</p>
           )}
         </div>
+
+        {/* Rank Badge */}
+        {rank !== null && (
+          <div className="flex flex-col items-center bg-primary text-primary-content rounded-xl px-4 py-3 min-w-[80px]">
+            <span className="text-xs font-semibold opacity-80">RANK</span>
+            <span className="text-3xl font-bold leading-none">#{rank}</span>
+            {batchSize && (
+              <span className="text-xs opacity-70">of {batchSize}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Quick Links */}

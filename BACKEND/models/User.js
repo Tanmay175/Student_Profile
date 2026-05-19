@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, enum: ["student", "professor"], required: true },
     batch: { type: String },
+    rollNo: { type: String,unique: true, required: function() {return this.role==='student';},sparse:true },
   },
   { timestamps: true }
 );

@@ -10,8 +10,17 @@ export const registerUser = async (data) => {
   return res.data;
 };
 
-// ✅ NEW: Change Password
 export const changePassword = async (data) => {
   const res = await api.put("/api/auth/change-password", data);
+  return res.data;
+};
+
+export const forgotPassword = async (email) => {
+  const res = await api.post("/api/auth/forgot-password", { email });
+  return res.data;
+};
+
+export const resetPassword = async (data) => {
+  const res = await api.post("/api/auth/reset-password", data);
   return res.data;
 };

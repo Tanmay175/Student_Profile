@@ -1,11 +1,13 @@
 import express from "express";
-import { registerUser, loginUser, changePassword } from "../controllers/authController.js";
+import { registerUser, loginUser, changePassword, forgotPassword, resetPassword } from "../controllers/authController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.put("/change-password", authMiddleware, changePassword); // ✅ NEW
+router.put("/change-password", authMiddleware, changePassword);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 export default router;

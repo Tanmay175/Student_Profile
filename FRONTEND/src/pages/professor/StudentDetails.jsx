@@ -1,18 +1,42 @@
 import CertificatesSection from "../../components/CertificatesSection";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getStudentDetails } from "../../services/professorService";
 import {GitHubCalendar} from "react-github-calendar";
+import { getLeetcodeUsername, getGithubUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function StudentDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [githubData, setGithubData] = useState(null);
   const [lcData, setLcData] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete student "${data?.student?.name}"? This cannot be undone.`)) return;
+    try {
+      setDeleting(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/professor/student/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        navigate(-1);
+      } else {
+        alert("Failed to delete student");
+      }
+    } catch (e) {
+      alert("Error deleting student");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -33,9 +57,7 @@ function StudentDetails() {
   useEffect(() => {
     if (!data?.profile?.github) return;
 
-    const username = data.profile.github
-      .split("github.com/")[1]
-      ?.replace("/", "");
+    const username = getGithubUsername(data.profile.github);
 
     if (!username) return;
 
@@ -50,9 +72,7 @@ function StudentDetails() {
   useEffect(() => {
     if (!data?.profile?.leetcode) return;
 
-    const username = data.profile.leetcode
-      .split("leetcode.com/")[1]
-      ?.replace("/", "");
+    const username = getLeetcodeUsername(data.profile.leetcode);
 
     if (!username) return;
 
@@ -83,12 +103,13 @@ function StudentDetails() {
       {/* STUDENT HEADER */}
       <div className="flex items-center gap-6 bg-base-100 shadow p-6 rounded-xl">
         <img
-          src={profile?.profilePhoto || "https://i.pravatar.cc/150"}
+          src={profile?.profilePhoto || DEFAULT_AVATAR}
           className="w-24 h-24 rounded-full border object-cover"
           alt="Profile"
+          onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
         />
 
-        <div>
+        <div className="flex-1">
           <h2 className="text-2xl font-bold">{student.name}</h2>
 
           <p className="opacity-70">{student.email}</p>
@@ -114,6 +135,15 @@ function StudentDetails() {
             </p>
           )}
         </div>
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="btn btn-error btn-sm ml-auto self-start"
+        >
+          {deleting ? <span className="loading loading-spinner loading-xs"></span> : "🗑️ Delete"}
+        </button>
       </div>
 
       {/* QUICK LINKS */}
@@ -190,11 +220,7 @@ function StudentDetails() {
           </h3>
 
           <GitHubCalendar
-            username={
-              profile.github
-                .split("github.com/")[1]
-                ?.replace("/", "")
-            }
+            username={getGithubUsername(profile.github)}
           />
         </div>
       )}

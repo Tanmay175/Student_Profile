@@ -79,3 +79,21 @@ export const getStudentsByBatchWithProfiles = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// DELETE STUDENT (professor only)
+export const deleteStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const student = await User.findById(id);
+    if (!student || student.role !== "student")
+      return res.status(404).json({ message: "Student not found" });
+
+    // Delete profile and user
+    await StudentProfile.deleteOne({ userId: id });
+    await User.deleteOne({ _id: id });
+
+    res.json({ message: "Student deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

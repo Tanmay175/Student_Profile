@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getStudentsByBatchWithProfiles } from "../../services/professorService";
+import { getLeetcodeUsername, getGithubUsername } from "../../utils/profileUtils";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -38,7 +39,7 @@ function Leaderboard() {
 
             // ✅ Use backend proxy for GitHub (cached, avoids rate limits)
             if (s.profile?.github) {
-              const username = s.profile.github?.split("github.com/")[1]?.replace("/", "");
+              const username = getGithubUsername(s.profile.github);
               if (username) {
                 try {
                   const g = await fetch(`${API_URL}/api/github/${username}`);
@@ -51,8 +52,7 @@ function Leaderboard() {
 
             // ✅ Use backend proxy for LeetCode (cached + difficulty breakdown)
             if (s.profile?.leetcode) {
-              const username = s.profile.leetcode?.split("leetcode.com/u/")[1]?.replace("/", "")
-                || s.profile.leetcode?.split("leetcode.com/")[1]?.replace("/", "");
+              const username = getLeetcodeUsername(s.profile.leetcode);
               if (username) {
                 try {
                   const l = await fetch(`${API_URL}/api/leetcode/${username}`);
