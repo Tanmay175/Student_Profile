@@ -3,9 +3,14 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getStudentDetails } from "../../services/professorService";
 import {GitHubCalendar} from "react-github-calendar";
-import { getLeetcodeUsername, getGithubUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
+import {
+  getLeetcodeUsername,
+  getGithubUsername,
+  DEFAULT_AVATAR,
+} from "../../utils/profileUtils";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function StudentDetails() {
   const { id } = useParams();
@@ -14,30 +19,47 @@ function StudentDetails() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [githubData, setGithubData] = useState(null);
-  const [lcData, setLcData] = useState(null);
+  const [lcData, setLcData] = useState({});
   const [deleting, setDeleting] = useState(false);
 
+  // DELETE STUDENT
   const handleDelete = async () => {
-    if (!window.confirm(`Delete student "${data?.student?.name}"? This cannot be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete student "${data?.student?.name}"? This cannot be undone.`
+      )
+    )
+      return;
+
     try {
       setDeleting(true);
+
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/professor/student/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      const res = await fetch(
+        `${API_URL}/api/professor/student/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (res.ok) {
         navigate(-1);
       } else {
         alert("Failed to delete student");
       }
-    } catch (e) {
+    } catch (error) {
+      console.log(error);
       alert("Error deleting student");
     } finally {
       setDeleting(false);
     }
   };
 
+  // FETCH STUDENT DETAILS
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -53,7 +75,7 @@ function StudentDetails() {
     fetchDetails();
   }, [id]);
 
-  // Fetch GitHub
+  // FETCH GITHUB DATA
   useEffect(() => {
     if (!data?.profile?.github) return;
 
@@ -61,14 +83,20 @@ function StudentDetails() {
 
     if (!username) return;
 
-    // use backend proxy with caching
     fetch(`${API_URL}/api/github/${username}`)
       .then((r) => r.json())
-      .then(setGithubData)
+      .then((json) => {
+        if (!json || typeof json !== "object") {
+          setGithubData(null);
+          return;
+        }
+
+        setGithubData(json);
+      })
       .catch(console.log);
   }, [data]);
 
-  // Fetch LeetCode
+  // FETCH LEETCODE DATA
   useEffect(() => {
     if (!data?.profile?.leetcode) return;
 
@@ -80,11 +108,21 @@ function StudentDetails() {
       .then((r) => r.json())
       .then((json) => {
         console.log("LeetCode raw response:", json);
+
+        if (!json || typeof json !== "object") {
+          setLcData({});
+          return;
+        }
+
         setLcData(json);
       })
-      .catch(console.log);
+      .catch((err) => {
+        console.log(err);
+        setLcData({});
+      });
   }, [data]);
 
+  // LOADING
   if (loading) {
     return (
       <div className="flex justify-center mt-10">
@@ -93,42 +131,54 @@ function StudentDetails() {
     );
   }
 
-  if (!data) return <p>No data found</p>;
+  // NO DATA
+  if (!data) {
+    return (
+      <div className="text-center mt-10">
+        <p>No student data found</p>
+      </div>
+    );
+  }
 
   const { student, profile } = data;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto p-4">
 
-      {/* STUDENT HEADER */}
+      {/* HEADER */}
       <div className="flex items-center gap-6 bg-base-100 shadow p-6 rounded-xl">
+
         <img
           src={profile?.profilePhoto || DEFAULT_AVATAR}
-          className="w-24 h-24 rounded-full border object-cover"
           alt="Profile"
-          onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
+          className="w-24 h-24 rounded-full border object-cover"
+          onError={(e) => {
+            e.target.src = DEFAULT_AVATAR;
+          }}
         />
 
         <div className="flex-1">
-          <h2 className="text-2xl font-bold">{student.name}</h2>
+          <h2 className="text-2xl font-bold">
+            {student?.name}
+          </h2>
 
-          <p className="opacity-70">{student.email}</p>
-
-          <p className="text-sm">
-            Batch: {student.batch}
+          <p className="opacity-70">
+            {student?.email}
           </p>
 
-          {/* Roll No */}
+          <p className="text-sm">
+            Batch: {student?.batch}
+          </p>
+
           {profile?.rollNo && (
             <p className="text-sm">
-              Roll No:{" "}
-              <span className="font-semibold">
+              Roll No:
+              <span className="font-semibold ml-1">
                 {profile.rollNo}
               </span>
             </p>
           )}
 
-          {/* Bio */}
           {profile?.bio && (
             <p className="mt-2 text-sm italic text-gray-400">
               "{profile.bio}"
@@ -136,18 +186,21 @@ function StudentDetails() {
           )}
         </div>
 
-        {/* Delete button */}
         <button
           onClick={handleDelete}
           disabled={deleting}
           className="btn btn-error btn-sm ml-auto self-start"
         >
-          {deleting ? <span className="loading loading-spinner loading-xs"></span> : "🗑️ Delete"}
+          {deleting ? (
+            <span className="loading loading-spinner loading-xs"></span>
+          ) : (
+            "🗑️ Delete"
+          )}
         </button>
       </div>
 
       {/* QUICK LINKS */}
-      <div className="flex gap-3 mt-6">
+      <div className="flex flex-wrap gap-3 mt-6">
 
         {profile?.github && (
           <a
@@ -181,7 +234,6 @@ function StudentDetails() {
             LeetCode
           </a>
         )}
-
       </div>
 
       {/* GITHUB STATS */}
@@ -191,21 +243,21 @@ function StudentDetails() {
           <div className="card bg-base-100 shadow p-4">
             <p className="font-bold">Repositories</p>
             <p className="text-2xl">
-              {githubData.public_repos}
+              {githubData?.public_repos ?? 0}
             </p>
           </div>
 
           <div className="card bg-base-100 shadow p-4">
             <p className="font-bold">Followers</p>
             <p className="text-2xl">
-              {githubData.followers}
+              {githubData?.followers ?? 0}
             </p>
           </div>
 
           <div className="card bg-base-100 shadow p-4">
             <p className="font-bold">Following</p>
             <p className="text-2xl">
-              {githubData.following}
+              {githubData?.following ?? 0}
             </p>
           </div>
 
@@ -213,79 +265,83 @@ function StudentDetails() {
       )}
 
       {/* GITHUB ACTIVITY */}
-      {profile?.github && (
-        <div className="mt-8 bg-base-100 shadow p-6 rounded-xl">
-          <h3 className="font-bold mb-3">
-            GitHub Activity
-          </h3>
+      {profile?.github &&
+        getGithubUsername(profile.github) && (
+          <div className="mt-8 bg-base-100 shadow p-6 rounded-xl">
 
-          <GitHubCalendar
-            username={getGithubUsername(profile.github)}
-          />
-        </div>
-      )}
+            <h3 className="font-bold mb-3">
+              GitHub Activity
+            </h3>
+
+            <GitHubCalendar
+              username={getGithubUsername(profile.github)}
+            />
+          </div>
+        )}
 
       {/* LEETCODE STATS */}
-      {lcData && (
-        <div className="mt-6">
+      {profile?.leetcode &&
+        lcData &&
+        typeof lcData === "object" && (
+          <div className="mt-6">
 
-          <h3 className="font-bold mb-3">
-            LeetCode Stats
-          </h3>
+            <h3 className="font-bold mb-3">
+              LeetCode Stats
+            </h3>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-            <div className="card bg-base-100 shadow p-4 text-center">
-              <p className="font-bold text-gray-500">
-                Total Solved
-              </p>
+              <div className="card bg-base-100 shadow p-4 text-center">
+                <p className="font-bold text-gray-500">
+                  Total Solved
+                </p>
 
-              <p className="text-2xl font-bold">
-                {lcData.totalSolved ??
-                  lcData.solvedProblem ??
-                  0}
-              </p>
+                <p className="text-2xl font-bold">
+                  {lcData?.totalSolved ??
+                    lcData?.solvedProblem ??
+                    0}
+                </p>
+              </div>
+
+              <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-green-400">
+                <p className="font-bold text-green-500">
+                  Easy
+                </p>
+
+                <p className="text-2xl font-bold">
+                  {lcData?.easySolved ??
+                    lcData?.totalEasy ??
+                    0}
+                </p>
+              </div>
+
+              <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-yellow-400">
+                <p className="font-bold text-yellow-500">
+                  Medium
+                </p>
+
+                <p className="text-2xl font-bold">
+                  {lcData?.mediumSolved ??
+                    lcData?.totalMedium ??
+                    0}
+                </p>
+              </div>
+
+              <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-red-400">
+                <p className="font-bold text-red-500">
+                  Hard
+                </p>
+
+                <p className="text-2xl font-bold">
+                  {lcData?.hardSolved ??
+                    lcData?.totalHard ??
+                    0}
+                </p>
+              </div>
+
             </div>
-
-            <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-green-400">
-              <p className="font-bold text-green-500">
-                Easy
-              </p>
-
-              <p className="text-2xl font-bold">
-                {lcData.easySolved ??
-                  lcData.totalEasy ??
-                  0}
-              </p>
-            </div>
-
-            <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-yellow-400">
-              <p className="font-bold text-yellow-500">
-                Medium
-              </p>
-
-              <p className="text-2xl font-bold">
-                {lcData.mediumSolved ??
-                  lcData.totalMedium ??
-                  0}
-              </p>
-            </div>
-
-            <div className="card bg-base-100 shadow p-4 text-center border-t-4 border-red-400">
-              <p className="font-bold text-red-500">
-                Hard
-              </p>
-
-              <p className="text-2xl font-bold">
-                {lcData.hardSolved ??
-                  lcData.totalHard ??
-                  0}
-              </p>
-            </div>
-
           </div>
-        </div>
-      )}
+        )}
 
       {/* RESUME */}
       {profile?.resume && (
@@ -295,7 +351,6 @@ function StudentDetails() {
             Resume
           </h3>
 
-          {/* CHANGED HERE */}
           <iframe
             src={profile.resume}
             className="w-full h-[500px] rounded"
@@ -303,7 +358,6 @@ function StudentDetails() {
             allow="autoplay"
           ></iframe>
 
-          {/* CHANGED HERE */}
           <a
             href={profile.resume}
             target="_blank"
@@ -316,6 +370,7 @@ function StudentDetails() {
         </div>
       )}
 
+      {/* CERTIFICATES */}
       <CertificatesSection
         studentId={student?._id}
         isOwner={false}
