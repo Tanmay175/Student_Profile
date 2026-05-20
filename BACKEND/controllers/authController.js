@@ -3,22 +3,25 @@ import StudentProfile from "../models/StuProfile.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import generateToken from "../utils/generateToken.js";
-import OTP from "../models/OTP.js";
+import OTP from "../models/Otp.js";
 import sendEmail from "../utils/sendEmail.js";
 
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role, batch, rollNo } = req.body;
 
-    const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ message: "User exists" });
-
-    if (role === "student") {
-      if (!rollNo || !rollNo.trim())
-        return res.status(400).json({ message: "Roll number is required for students" });
-      if (!batch)
-        return res.status(400).json({ message: "Batch (year of passout) is required for students" });
+    // 🔒 Block professor self-registration via public API
+    if (role === "professor") {
+      return res.status(403).json({ message: "Professor accounts cannot be created via registration." });
     }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
+
+    if (!rollNo || !rollNo.trim())
+      return res.status(400).json({ message: "Roll number is required" });
+    if (!batch)
+      return res.status(400).json({ message: "Batch (year of passout) is required" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -26,19 +29,17 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role,
-      batch: role === "student" ? batch : undefined,
-      rollNo: role === "student" ? rollNo.trim() : undefined,
+      role: "student", // always student regardless of what was sent
+      batch,
+      rollNo: rollNo.trim(),
     });
 
-    if (role === "student") {
-      await StudentProfile.create({
-        userId: user._id,
-        name: user.name,
-        batch: user.batch,
-        rollNo: user.rollNo,
-      });
-    }
+    await StudentProfile.create({
+      userId: user._id,
+      name: user.name,
+      batch: user.batch,
+      rollNo: user.rollNo,
+    });
 
     res.status(201).json({
       _id: user._id,
