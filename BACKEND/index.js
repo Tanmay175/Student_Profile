@@ -13,14 +13,28 @@ connectDB();
 
 const app = express();
 
-// ✅ FIX: restrict CORS to your frontend URL only
+// CORS — allow local dev + production frontend
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: ["http://localhost:5173", process.env.CLIENT_URL].filter(Boolean),
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
   credentials: true,
 }));
 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
+
+// Health check — keeps Render free tier awake
+app.get("/api/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
@@ -37,36 +51,29 @@ app.get("/api/leetcode/:username", async (req, res) => {
     const { username } = req.params;
     if (!username) return res.status(400).json({ error: "Username required" });
 
-    // Check cache
     const cached = leetcodeCache.get(username);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
       return res.json({ ...cached.data, fromCache: true });
     }
 
-    // Fetch solved count with difficulty breakdown
     const response = await fetch(
       `https://alfa-leetcode-api.onrender.com/${username}/solved`
     );
     if (!response.ok) return res.status(response.status).json({ error: "LeetCode API failed" });
 
     const data = await response.json();
-
-    // Store in cache
     leetcodeCache.set(username, { data, fetchedAt: Date.now() });
-
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch LeetCode data" });
   }
 });
 
-// ✅ GitHub cache proxy to avoid rate limits on frontend
 app.get("/api/github/:username", async (req, res) => {
   try {
     const { username } = req.params;
     if (!username) return res.status(400).json({ error: "Username required" });
 
-    // Check cache
     const cached = githubCache.get(username);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
       return res.json({ ...cached.data, fromCache: true });
@@ -74,7 +81,7 @@ app.get("/api/github/:username", async (req, res) => {
 
     const response = await fetch(`https://api.github.com/users/${username}`, {
       headers: {
-        "User-Agent": "StudentProfileApp",
+        "User-Agent": "StuTrackApp",
         ...(process.env.GITHUB_TOKEN && {
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
         }),
@@ -84,16 +91,14 @@ app.get("/api/github/:username", async (req, res) => {
     if (!response.ok) return res.status(response.status).json({ error: "GitHub API failed" });
 
     const data = await response.json();
-
-    // Store in cache
     githubCache.set(username, { data, fetchedAt: Date.now() });
-
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch GitHub data" });
   }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
