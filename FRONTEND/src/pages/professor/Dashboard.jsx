@@ -1,3 +1,4 @@
+// FRONTEND/src/pages/professor/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { getBatches } from "../../services/professorService";
 import { Link } from "react-router-dom";
@@ -17,7 +18,6 @@ function ProfessorDashboard() {
         setLoading(false);
       }
     };
-
     fetchBatches();
   }, []);
 
@@ -31,17 +31,25 @@ function ProfessorDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Batches</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-4">Batches</h1>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {batches.map((batch) => (
-          <Link to={`/professor/batch/${batch}`} key={batch}>
-            <div className="card bg-base-100 shadow p-4 hover:bg-base-200">
-              Batch {batch}
-            </div>
-          </Link>
-        ))}
-      </div>
+      {batches.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-4xl mb-3">📭</p>
+          <p>No batches found. Students need to register first.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {batches.map((batch) => (
+            <Link to={`/professor/batch/${batch}`} key={batch}>
+              <div className="card bg-base-100 shadow p-4 md:p-6 hover:bg-base-200 hover:shadow-md transition-all text-center">
+                <p className="text-sm text-gray-500 mb-1">Batch</p>
+                <p className="text-xl md:text-2xl font-bold">{batch}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
