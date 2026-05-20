@@ -1,28 +1,69 @@
 // FRONTEND/src/components/Sidebar.jsx
-import { Link } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
-function Sidebar({ role }) {
+function Sidebar({ role, onNavigate }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/");
+  };
+
+  const linkClass = ({ isActive }) =>
+    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+     ${isActive
+       ? "bg-primary text-primary-content"
+       : "hover:bg-base-200 text-base-content"
+     }`;
+
   return (
-    <div className="w-64 bg-base-100 shadow-md p-4 hidden md:block">
-      <ul className="menu">
+    <aside className="w-64 bg-base-100 shadow-md p-4 hidden md:flex md:flex-col shrink-0">
+      <ul className="menu menu-sm flex-1">
         {role === "student" && (
           <>
-            <li><Link to="/student/dashboard">Dashboard</Link></li>
-            <li><Link to="/student/profile">Profile</Link></li>
-            <li><Link to="/student/change-password">🔒 Change Password</Link></li>
+            <li>
+              <NavLink to="/student/dashboard" className={linkClass} onClick={onNavigate}>
+                🏠 Dashboard
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/profile" className={linkClass} onClick={onNavigate}>
+                👤 Profile
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/edit" className={linkClass} onClick={onNavigate}>
+                ✏️ Edit Profile
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/change-password" className={linkClass} onClick={onNavigate}>
+                🔒 Change Password
+              </NavLink>
+            </li>
           </>
         )}
 
         {role === "professor" && (
           <>
-            <li><Link to="/professor/dashboard">Batches</Link></li>
-            {/* ✅ FIXED: was commented out */}
-            {/* Note: leaderboard is per-batch, so link goes to dashboard 
-                where professor picks a batch, then clicks the leaderboard button */}
+            <li>
+              <NavLink to="/professor/dashboard" className={linkClass} onClick={onNavigate}>
+                📚 Batches
+              </NavLink>
+            </li>
           </>
         )}
       </ul>
-    </div>
+
+      {/* Logout at bottom — desktop sidebar */}
+      <button
+        onClick={handleLogout}
+        className="btn btn-error btn-sm btn-outline w-full mt-4"
+      >
+        Logout
+      </button>
+    </aside>
   );
 }
 
