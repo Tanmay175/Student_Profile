@@ -2,12 +2,10 @@ import nodemailer from "nodemailer";
 
 const sendEmail = async ({ to, subject, html }) => {
   const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
+    service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER,  // your Brevo account email
-      pass: process.env.EMAIL_PASS,  // Brevo SMTP key (not your Brevo password)
+      user: process.env.EMAIL_USER,  // Gmail address
+      pass: process.env.EMAIL_PASS,  // Gmail App Password (16 chars, no spaces)
     },
   });
 
