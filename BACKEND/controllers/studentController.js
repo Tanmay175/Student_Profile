@@ -32,6 +32,11 @@ export const createProfile = async (req, res) => {
 
     res.status(201).json(profile);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || "field";
+      const label = field === "rollNo" ? "roll number" : field;
+      return res.status(400).json({ message: `A profile with this ${label} already exists` });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -50,6 +55,11 @@ export const getProfile = async (req, res) => {
       batch: user.batch,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || "field";
+      const label = field === "rollNo" ? "roll number" : field;
+      return res.status(400).json({ message: `A profile with this ${label} already exists` });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -84,6 +94,11 @@ export const updateProfile = async (req, res) => {
     await profile.save();
     res.json(profile);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || "field";
+      const label = field === "rollNo" ? "roll number" : field;
+      return res.status(400).json({ message: `A profile with this ${label} already exists` });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -118,6 +133,11 @@ export const getMyRank = async (req, res) => {
 
     res.json({ rank, total: batchUsers.length, score: myScore });
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || "field";
+      const label = field === "rollNo" ? "roll number" : field;
+      return res.status(400).json({ message: `A profile with this ${label} already exists` });
+    }
     res.status(500).json({ message: error.message });
   }
 };
