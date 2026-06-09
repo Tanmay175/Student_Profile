@@ -8,7 +8,7 @@ function Notifications() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/notifications/my");
+      const res = await api.get("/api/notifications/my");
       setNotifications(res.data);
     } catch (err) {
       console.log(err);
@@ -21,7 +21,7 @@ function Notifications() {
 
   const markRead = async (id) => {
     try {
-      await api.put(`/notifications/read/${id}`);
+      await api.put(`/api/notifications/read/${id}`);
       setNotifications(prev =>
         prev.map(n => n._id === id ? { ...n, isRead: true } : n)
       );
@@ -30,7 +30,7 @@ function Notifications() {
 
   const markAllRead = async () => {
     try {
-      await api.put("/notifications/read-all");
+      await api.put("/api/notifications/read-all");
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       toast.success("All marked as read ✅");
     } catch { toast.error("Failed"); }

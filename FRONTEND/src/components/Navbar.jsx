@@ -10,7 +10,7 @@ function Navbar({ role, onMenuClick }) {
     if (role !== "student") return;
     const fetchUnread = async () => {
       try {
-        const res = await api.get("/notifications/unread-count");
+        const res = await api.get("/api/notifications/unread-count");
         setUnread(res.data.count);
       } catch { /* silent */ }
     };

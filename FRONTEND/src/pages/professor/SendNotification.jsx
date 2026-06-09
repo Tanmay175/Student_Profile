@@ -1,42 +1,83 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
 function SendNotification() {
   const [type, setType] = useState("batch");
   const [batches, setBatches] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [form, setForm] = useState({ title: "", message: "", batch: "", toStudent: "" });
+  const [allStudents, setAllStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [form, setForm] = useState({ title: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState([]);
-  const navigate = useNavigate();
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    // Load batches and all students
-    api.get("/professor/batches").then(r => setBatches(r.data)).catch(console.log);
-    api.get("/professor/students").then(r => setStudents(r.data)).catch(console.log);
-    api.get("/notifications/sent").then(r => setSent(r.data)).catch(console.log);
+    const loadData = async () => {
+      try {
+        const [batchRes, studentRes, sentRes] = await Promise.all([
+          api.get("/api/professor/batches"),
+          api.get("/api/professor/students"),
+          api.get("/api/notifications/sent"),
+        ]);
+        setBatches(batchRes.data || []);
+        setAllStudents(studentRes.data || []);
+        setSent(sentRes.data || []);
+      } catch (err) {
+        toast.error("Failed to load data");
+        console.log(err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    loadData();
   }, []);
+
+  // When batch selected in personal mode, filter students
+  useEffect(() => {
+    if (!selectedBatch) {
+      setFilteredStudents([]);
+      setSelectedStudent("");
+      return;
+    }
+    const filtered = allStudents.filter(({ student }) => student.batch === selectedBatch);
+    setFilteredStudents(filtered);
+    setSelectedStudent(""); // reset student when batch changes
+  }, [selectedBatch, allStudents]);
+
+  // Reset selections when switching type
+  const handleTypeSwitch = (newType) => {
+    setType(newType);
+    setSelectedBatch("");
+    setSelectedStudent("");
+    setFilteredStudents([]);
+  };
 
   const handleSend = async () => {
     if (!form.title.trim()) return toast.error("Title is required");
     if (!form.message.trim()) return toast.error("Message is required");
-    if (type === "batch" && !form.batch) return toast.error("Select a batch");
-    if (type === "personal" && !form.toStudent) return toast.error("Select a student");
+    if (type === "batch" && !selectedBatch) return toast.error("Select a batch");
+    if (type === "personal" && !selectedStudent) return toast.error("Select a student");
 
     try {
       setLoading(true);
-      const payload = { title: form.title, message: form.message, type };
-      if (type === "batch") payload.batch = form.batch;
-      else payload.toStudent = form.toStudent;
+      const payload = {
+        title: form.title,
+        message: form.message,
+        type,
+        ...(type === "batch" ? { batch: selectedBatch } : { toStudent: selectedStudent }),
+      };
 
-      await api.post("/notifications/send", payload);
+      await api.post("/api/notifications/send", payload);
       toast.success("Notification sent ✅");
-      setForm({ title: "", message: "", batch: "", toStudent: "" });
-      // Refresh sent list
-      const r = await api.get("/notifications/sent");
-      setSent(r.data);
+      setForm({ title: "", message: "" });
+      setSelectedBatch("");
+      setSelectedStudent("");
+
+      const r = await api.get("/api/notifications/sent");
+      setSent(r.data || []);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send ❌");
     } finally {
@@ -46,7 +87,7 @@ function SendNotification() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/notifications/${id}`);
+      await api.delete(`/api/notifications/${id}`);
       setSent(sent.filter(n => n._id !== id));
       toast.success("Deleted");
     } catch {
@@ -64,6 +105,10 @@ function SendNotification() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  if (loadingData) {
+    return <div className="flex justify-center mt-10"><span className="loading loading-spinner loading-lg"></span></div>;
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-2 pb-8">
       <h2 className="text-2xl font-bold mb-6">🔔 Send Notification</h2>
@@ -71,48 +116,85 @@ function SendNotification() {
       {/* Type Toggle */}
       <div className="flex gap-2 mb-5">
         <button
-          onClick={() => setType("batch")}
+          onClick={() => handleTypeSwitch("batch")}
           className={`btn btn-sm flex-1 ${type === "batch" ? "btn-primary" : "btn-outline"}`}
         >
           📢 Entire Batch
         </button>
         <button
-          onClick={() => setType("personal")}
+          onClick={() => handleTypeSwitch("personal")}
           className={`btn btn-sm flex-1 ${type === "personal" ? "btn-primary" : "btn-outline"}`}
         >
-          👤 Specific Student
+          👤 Personal
         </button>
       </div>
 
-      {/* Target selector */}
-      {type === "batch" ? (
+      {/* BATCH MODE */}
+      {type === "batch" && (
         <div className="mb-4">
           <label className="text-sm font-medium mb-1 block">Select Batch</label>
-          <select
-            className="select select-bordered w-full"
-            value={form.batch}
-            onChange={e => setForm({ ...form, batch: e.target.value })}
-          >
-            <option value="" disabled>Choose batch...</option>
-            {batches.map(b => <option key={b} value={b}>Batch {b}</option>)}
-          </select>
+          {batches.length === 0 ? (
+            <p className="text-gray-400 text-sm">No batches found. Students need to register first.</p>
+          ) : (
+            <select
+              className="select select-bordered w-full"
+              value={selectedBatch}
+              onChange={e => setSelectedBatch(e.target.value)}
+            >
+              <option value="" disabled>Choose batch...</option>
+              {batches.map(b => (
+                <option key={b} value={b}>Batch {b}</option>
+              ))}
+            </select>
+          )}
         </div>
-      ) : (
-        <div className="mb-4">
-          <label className="text-sm font-medium mb-1 block">Select Student</label>
-          <select
-            className="select select-bordered w-full"
-            value={form.toStudent}
-            onChange={e => setForm({ ...form, toStudent: e.target.value })}
-          >
-            <option value="" disabled>Choose student...</option>
-            {students.map(({ student }) => (
-              <option key={student._id} value={student._id}>
-                {student.name} — Batch {student.batch}
+      )}
+
+      {/* PERSONAL MODE — Step 1: batch, Step 2: student */}
+      {type === "personal" && (
+        <>
+          <div className="mb-4">
+            <label className="text-sm font-medium mb-1 block">
+              Step 1 — Select Batch
+            </label>
+            {batches.length === 0 ? (
+              <p className="text-gray-400 text-sm">No batches found.</p>
+            ) : (
+              <select
+                className="select select-bordered w-full"
+                value={selectedBatch}
+                onChange={e => setSelectedBatch(e.target.value)}
+              >
+                <option value="" disabled>Choose batch first...</option>
+                {batches.map(b => (
+                  <option key={b} value={b}>Batch {b}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label className="text-sm font-medium mb-1 block">
+              Step 2 — Select Student
+              {!selectedBatch && <span className="text-gray-400 font-normal"> (select batch first)</span>}
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={selectedStudent}
+              onChange={e => setSelectedStudent(e.target.value)}
+              disabled={!selectedBatch}
+            >
+              <option value="" disabled>
+                {!selectedBatch ? "Select batch first..." : filteredStudents.length === 0 ? "No students in this batch" : "Choose student..."}
               </option>
-            ))}
-          </select>
-        </div>
+              {filteredStudents.map(({ student }) => (
+                <option key={student._id} value={student._id}>
+                  {student.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
       )}
 
       {/* Title */}
@@ -149,7 +231,7 @@ function SendNotification() {
           <div className="space-y-3">
             {sent.map(n => (
               <div key={n._id} className="bg-base-100 shadow rounded-xl p-4 flex gap-3">
-                <div className="text-2xl">{n.type === "batch" ? "📢" : "👤"}</div>
+                <div className="text-2xl shrink-0">{n.type === "batch" ? "📢" : "👤"}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold truncate">{n.title}</p>
@@ -162,7 +244,7 @@ function SendNotification() {
                 </div>
                 <button
                   onClick={() => handleDelete(n._id)}
-                  className="btn btn-ghost btn-xs text-error self-start"
+                  className="btn btn-ghost btn-xs text-error self-start shrink-0"
                 >✕</button>
               </div>
             ))}
