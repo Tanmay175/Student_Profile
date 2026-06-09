@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { FaGithub, FaLinkedin, FaCode } from "react-icons/fa";
 import { GitHubCalendar } from "react-github-calendar";
 import CertificatesSection from "../../components/CertificatesSection";
-import { getGithubUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
+import { getGithubUsername, getLeetcodeUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
 
 function SkeletonLoader() {
   return (
@@ -18,8 +18,32 @@ function SkeletonLoader() {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-4 mt-6">
-        {[1,2,3].map(i => <div key={i} className="h-24 bg-base-300 rounded-xl"></div>)}
+        {[1,2,3].map(i => <div key={i} className="h-28 bg-base-300 rounded-xl"></div>)}
       </div>
+    </div>
+  );
+}
+
+// Social card — clickable to open profile, shows username
+function SocialCard({ icon, label, url, username, color }) {
+  return (
+    <div className="card bg-base-100 shadow p-4 hover:shadow-md transition-shadow">
+      <div className={`mb-2 ${color}`}>{icon}</div>
+      <p className="font-bold mb-1">{label}</p>
+      {url && username ? (
+        <>
+          <p className="text-xs text-gray-400 mb-2 font-mono truncate">@{username}</p>
+          <a href={url} target="_blank" rel="noreferrer"
+            className="btn btn-xs btn-outline w-full">
+            View Profile →
+          </a>
+        </>
+      ) : (
+        <div className="flex items-center justify-between">
+          <p className="text-gray-400 text-sm">Not added</p>
+          <Link to="/student/edit" className="text-xs text-primary hover:underline">Add</Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -43,6 +67,10 @@ function Profile() {
   }, []);
 
   const githubUsername = getGithubUsername(profile?.github);
+  const leetcodeUsername = getLeetcodeUsername(profile?.leetcode);
+  const linkedinUsername = profile?.linkedin
+    ? profile.linkedin.replace(/\/$/, "").split("linkedin.com/in/")[1]?.split("/")[0] || ""
+    : "";
 
   const calculateCompletion = () => {
     if (!profile) return 0;
@@ -56,23 +84,25 @@ function Profile() {
     return (
       <div className="text-center mt-10 px-4">
         <p className="text-red-500 text-lg mb-4">No Profile Found ❗</p>
-        <Link to="/student/edit">
-          <button className="btn btn-primary">Create Profile</button>
-        </Link>
+        <Link to="/student/edit"><button className="btn btn-primary">Create Profile</button></Link>
       </div>
     );
   }
 
+  const completion = calculateCompletion();
+
   return (
     <div className="max-w-4xl mx-auto px-2 pb-8">
+
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-base-100 shadow p-4 md:p-6 rounded-xl">
         <img
           src={profile.profilePhoto || DEFAULT_AVATAR}
           onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
-          className="w-24 h-24 rounded-full border object-cover shrink-0"
+          className="w-24 h-24 rounded-full border-2 border-primary object-cover shrink-0"
           alt="Profile"
         />
-        <div className="flex-1 text-center sm:text-left">
+        <div className="flex-1 text-center sm:text-left min-w-0">
           <h2 className="text-xl md:text-2xl font-bold">{profile.name}</h2>
           <p className="text-sm opacity-70">Batch: {profile.batch}</p>
           {profile.rollNo && (
@@ -82,52 +112,52 @@ function Profile() {
             <p className="mt-2 text-sm italic text-gray-400">"{profile.bio}"</p>
           )}
           <div className="mt-3">
-            <progress className="progress progress-success w-full max-w-xs" value={calculateCompletion()} max="100"></progress>
-            <p className="text-sm mt-1">{calculateCompletion()}% profile completed</p>
+            <div className="flex items-center gap-2">
+              <progress className="progress progress-success flex-1 max-w-xs" value={completion} max="100"></progress>
+              <span className="text-sm font-medium">{completion}%</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">Profile completed</p>
           </div>
         </div>
-        <Link to="/student/edit" className="btn btn-primary btn-sm shrink-0">✏️ Edit</Link>
+        <Link to="/student/edit" className="btn btn-primary btn-sm shrink-0">✏️ Edit Profile</Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
-        <div className="card bg-base-100 shadow p-4">
-          <FaLinkedin size={24} className="text-blue-500 mb-2" />
-          <p className="font-bold mb-1">LinkedIn</p>
-          {profile.linkedin ? (
-            <a href={profile.linkedin} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline">View Profile →</a>
-          ) : (
-            <p className="text-gray-400 text-sm">No LinkedIn profile</p>
-          )}
-        </div>
-        <div className="card bg-base-100 shadow p-4">
-          <FaGithub size={24} className="mb-2" />
-          <p className="font-bold mb-1">GitHub</p>
-          {profile.github ? (
-            <a href={profile.github} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline">View Profile →</a>
-          ) : (
-            <p className="text-gray-400 text-sm">No GitHub profile</p>
-          )}
-        </div>
-        <div className="card bg-base-100 shadow p-4">
-          <FaCode size={24} className="text-orange-500 mb-2" />
-          <p className="font-bold mb-1">LeetCode</p>
-          {profile.leetcode ? (
-            <a href={profile.leetcode} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline">View Profile →</a>
-          ) : (
-            <p className="text-gray-400 text-sm">No LeetCode profile</p>
-          )}
-        </div>
+      {/* SOCIAL CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+        <SocialCard
+          icon={<FaLinkedin size={22} />}
+          label="LinkedIn"
+          url={profile.linkedin}
+          username={linkedinUsername}
+          color="text-blue-500"
+        />
+        <SocialCard
+          icon={<FaGithub size={22} />}
+          label="GitHub"
+          url={profile.github}
+          username={githubUsername}
+          color="text-gray-800"
+        />
+        <SocialCard
+          icon={<FaCode size={22} />}
+          label="LeetCode"
+          url={profile.leetcode}
+          username={leetcodeUsername}
+          color="text-orange-500"
+        />
       </div>
 
+      {/* GITHUB CALENDAR */}
       {githubUsername && (
-        <div className="mt-6 bg-base-100 shadow p-4 md:p-6 rounded-xl overflow-x-auto">
+        <div className="mt-5 bg-base-100 shadow p-4 md:p-6 rounded-xl overflow-x-auto">
           <h3 className="font-bold mb-3">GitHub Activity</h3>
           <GitHubCalendar username={githubUsername} />
         </div>
       )}
 
+      {/* RESUME */}
       {profile.resume && (
-        <div className="mt-6 bg-base-100 shadow p-4 md:p-6 rounded-xl">
+        <div className="mt-5 bg-base-100 shadow p-4 md:p-6 rounded-xl">
           <h3 className="font-bold mb-3">Resume</h3>
           <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
             <iframe src={profile.resume} className="absolute inset-0 w-full h-full rounded" title="Resume" allow="autoplay"></iframe>
@@ -136,7 +166,9 @@ function Profile() {
         </div>
       )}
 
+      {/* CERTIFICATES */}
       <CertificatesSection studentId={profile?.userId} isOwner={true} />
+
     </div>
   );
 }
