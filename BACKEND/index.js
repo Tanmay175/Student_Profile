@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import professorRoutes from "./routes/professorRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/professor", professorRoutes);
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 const leetcodeCache = new Map();
 const githubCache = new Map();
@@ -42,9 +44,7 @@ app.get("/api/leetcode/:username", async (req, res) => {
     const { username } = req.params;
     if (!username) return res.status(400).json({ error: "Username required" });
     const cached = leetcodeCache.get(username);
-    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-      return res.json({ ...cached.data, fromCache: true });
-    }
+    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return res.json({ ...cached.data, fromCache: true });
     const response = await fetch(`https://alfa-leetcode-api.onrender.com/${username}/solved`);
     if (!response.ok) return res.status(response.status).json({ error: "LeetCode API failed" });
     const data = await response.json();
@@ -60,15 +60,11 @@ app.get("/api/github/:username", async (req, res) => {
     const { username } = req.params;
     if (!username) return res.status(400).json({ error: "Username required" });
     const cached = githubCache.get(username);
-    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-      return res.json({ ...cached.data, fromCache: true });
-    }
+    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return res.json({ ...cached.data, fromCache: true });
     const response = await fetch(`https://api.github.com/users/${username}`, {
       headers: {
         "User-Agent": "StuTrackApp",
-        ...(process.env.GITHUB_TOKEN && {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        }),
+        ...(process.env.GITHUB_TOKEN && { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }),
       },
     });
     if (!response.ok) return res.status(response.status).json({ error: "GitHub API failed" });
@@ -81,6 +77,4 @@ app.get("/api/github/:username", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
