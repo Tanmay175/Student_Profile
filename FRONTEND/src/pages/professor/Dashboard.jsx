@@ -1,50 +1,48 @@
-// FRONTEND/src/pages/professor/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { getBatches } from "../../services/professorService";
 import { Link } from "react-router-dom";
+
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-7 bg-base-300 rounded-lg w-32"></div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[1,2,3,4].map(i => <div key={i} className="h-24 bg-base-300 rounded-2xl"></div>)}
+      </div>
+    </div>
+  );
+}
 
 function ProfessorDashboard() {
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        const data = await getBatches();
-        setBatches(data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBatches();
+    getBatches()
+      .then(setBatches)
+      .catch(console.log)
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center mt-10">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
+  if (loading) return <Skeleton />;
 
   return (
-    <div>
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">Batches</h1>
+    <div className="max-w-2xl mx-auto pb-8">
+      <h1 className="text-xl font-bold mb-5 px-1">📚 Batches</h1>
 
       {batches.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-4xl mb-3">📭</p>
-          <p>No batches found. Students need to register first.</p>
+        <div className="flex flex-col items-center py-20 text-base-content/40">
+          <span className="text-5xl mb-3">📭</span>
+          <p className="font-medium">No batches yet</p>
+          <p className="text-sm mt-1">Students need to register first</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {batches.map((batch) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {batches.map(batch => (
             <Link to={`/professor/batch/${batch}`} key={batch}>
-              <div className="card bg-base-100 shadow p-4 md:p-6 hover:bg-base-200 hover:shadow-md transition-all text-center">
-                <p className="text-sm text-gray-500 mb-1">Batch</p>
-                <p className="text-xl md:text-2xl font-bold">{batch}</p>
+              <div className="bg-base-100 rounded-2xl p-5 shadow-sm hover:shadow-md active:scale-95 transition-all text-center">
+                <p className="text-xs text-base-content/50 mb-1">Batch</p>
+                <p className="text-2xl font-bold">{batch}</p>
               </div>
             </Link>
           ))}

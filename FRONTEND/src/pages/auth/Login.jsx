@@ -1,4 +1,3 @@
-// FRONTEND/src/pages/auth/Login.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../../services/authService";
@@ -9,9 +8,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async () => {
     try {
@@ -19,69 +16,59 @@ function Login() {
       const data = await loginUser(form);
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
-      toast.success("Login successful 🎉");
-      if (data.role === "student") {
-        navigate("/student/dashboard");
-      } else {
-        navigate("/professor/dashboard");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed ❌");
+      toast.success("Welcome back! 🎉");
+      navigate(data.role === "student" ? "/student/dashboard" : "/professor/dashboard");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid credentials ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit();
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
-      <div className="card w-full max-w-sm bg-base-100 shadow-xl p-6 md:p-8">
-        {/* Logo / Title */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-primary">StuTrack</h1>
-          <p className="text-sm text-gray-500 mt-1">Student Profile Management</p>
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary">StuTrack</h1>
+          <p className="text-sm text-base-content/50 mt-1">Student Profile Management</p>
         </div>
 
-        <h2 className="text-xl font-bold mb-4">Login</h2>
+        <div className="bg-base-100 rounded-2xl p-6 shadow-sm space-y-4">
+          <h2 className="text-xl font-bold">Login</h2>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="input input-bordered w-full mb-3"
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          autoComplete="email"
-        />
+          <div>
+            <label className="text-xs text-base-content/60 mb-1 block">Email</label>
+            <input
+              type="email" name="email"
+              placeholder="your@email.com"
+              className="input input-bordered w-full"
+              onChange={handleChange}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              autoComplete="email"
+            />
+          </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="input input-bordered w-full mb-4"
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          autoComplete="current-password"
-        />
+          <div>
+            <label className="text-xs text-base-content/60 mb-1 block">Password</label>
+            <input
+              type="password" name="password"
+              placeholder="Enter password"
+              className="input input-bordered w-full"
+              onChange={handleChange}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              autoComplete="current-password"
+            />
+          </div>
 
-        <button
-          onClick={handleSubmit}
-          className="btn btn-primary w-full"
-          disabled={loading}
-        >
-          {loading ? <span className="loading loading-spinner loading-sm"></span> : "Login"}
-        </button>
+          <button onClick={handleSubmit} className="btn btn-primary w-full" disabled={loading}>
+            {loading ? <span className="loading loading-spinner loading-sm"></span> : "Login"}
+          </button>
 
-        <div className="mt-4 flex justify-between text-sm">
-          <Link to="/forgot-password" className="text-gray-500 hover:text-primary">
-            Forgot password?
-          </Link>
-          <Link to="/register" className="text-primary hover:underline">
-            Register
-          </Link>
+          <div className="flex justify-between text-sm pt-1">
+            <Link to="/forgot-password" className="text-base-content/50 hover:text-primary">Forgot password?</Link>
+            <Link to="/register" className="text-primary font-medium">Register →</Link>
+          </div>
         </div>
       </div>
     </div>

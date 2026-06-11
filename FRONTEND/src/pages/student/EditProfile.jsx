@@ -3,43 +3,42 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getProfile, createProfile, updateProfile } from "../../services/studentService";
 
-// Extract username from stored URL (for pre-filling the form)
+const isValidUrl = (val, keyword) => !val || val.trim() === "" || val.includes(keyword);
+
 const extractUsername = {
-  github: (val) => {
-    if (!val) return "";
-    if (val.includes("github.com/")) return val.replace(/\/$/, "").split("github.com/")[1]?.split("/")[0] || "";
-    return val; // already a username
-  },
-  linkedin: (val) => {
-    if (!val) return "";
-    if (val.includes("linkedin.com/in/")) return val.replace(/\/$/, "").split("linkedin.com/in/")[1]?.split("/")[0] || "";
-    return val;
-  },
-  leetcode: (val) => {
-    if (!val) return "";
-    if (val.includes("leetcode.com/u/")) return val.replace(/\/$/, "").split("leetcode.com/u/")[1]?.split("/")[0] || "";
-    if (val.includes("leetcode.com/")) return val.replace(/\/$/, "").split("leetcode.com/")[1]?.split("/")[0] || "";
-    return val;
-  },
+  github:   v => v?.includes("github.com/")       ? v.replace(/\/$/, "").split("github.com/")[1]?.split("/")[0]       || "" : (v || ""),
+  linkedin: v => v?.includes("linkedin.com/in/")  ? v.replace(/\/$/, "").split("linkedin.com/in/")[1]?.split("/")[0]  || "" : (v || ""),
+  leetcode: v => v?.includes("leetcode.com/u/")   ? v.replace(/\/$/, "").split("leetcode.com/u/")[1]?.split("/")[0]   || ""
+              : v?.includes("leetcode.com/")       ? v.replace(/\/$/, "").split("leetcode.com/")[1]?.split("/")[0]    || "" : (v || ""),
 };
 
-// Convert username → full URL before saving
-const toFullUrl = {
-  github: (u) => u ? `https://github.com/${u.trim().replace(/^@/, "")}` : "",
-  linkedin: (u) => u ? `https://linkedin.com/in/${u.trim().replace(/^@/, "")}` : "",
-  leetcode: (u) => u ? `https://leetcode.com/u/${u.trim().replace(/^@/, "")}` : "",
+const toUrl = {
+  github:   u => u ? `https://github.com/${u.trim().replace(/^@/, "")}` : "",
+  linkedin: u => u ? `https://linkedin.com/in/${u.trim().replace(/^@/, "")}` : "",
+  leetcode: u => u ? `https://leetcode.com/u/${u.trim().replace(/^@/, "")}` : "",
 };
+
+function PrefixInput({ prefix, name, value, placeholder, onChange }) {
+  return (
+    <div className="flex items-center border border-base-300 rounded-xl overflow-hidden bg-base-100 focus-within:border-primary transition-colors">
+      <span className="text-base-content/40 text-sm px-3 py-3 bg-base-200 border-r border-base-300 whitespace-nowrap shrink-0">
+        {prefix}
+      </span>
+      <input
+        name={name}
+        value={value}
+        placeholder={placeholder}
+        onChange={onChange}
+        className="flex-1 bg-transparent px-3 py-3 text-sm outline-none min-w-0"
+        autoCorrect="off"
+        autoCapitalize="none"
+      />
+    </div>
+  );
+}
 
 function EditProfile() {
-  const [form, setForm] = useState({
-    githubUsername: "",
-    linkedinUsername: "",
-    leetcodeUsername: "",
-    bio: "",
-    rollNo: "",
-    resumeLink: "",
-  });
-
+  const [form, setForm] = useState({ github: "", linkedin: "", leetcode: "", bio: "", rollNo: "", resumeLink: "" });
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -48,181 +47,159 @@ function EditProfile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getProfile();
+    getProfile()
+      .then(data => {
         if (data) {
           setProfileExists(true);
           setForm({
-            githubUsername: extractUsername.github(data.github),
-            linkedinUsername: extractUsername.linkedin(data.linkedin),
-            leetcodeUsername: extractUsername.leetcode(data.leetcode),
-            bio: data.bio || "",
-            rollNo: data.rollNo || "",
+            github:     extractUsername.github(data.github),
+            linkedin:   extractUsername.linkedin(data.linkedin),
+            leetcode:   extractUsername.leetcode(data.leetcode),
+            bio:        data.bio || "",
+            rollNo:     data.rollNo || "",
             resumeLink: data.resume || "",
           });
           if (data.profilePhoto) setPhotoPreview(data.profilePhoto);
         }
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setFetching(false);
-      }
-    };
-    fetchProfile();
+      })
+      .catch(console.log)
+      .finally(() => setFetching(false));
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handlePhotoChange = (e) => {
+  const handlePhoto = e => {
     const file = e.target.files[0];
     if (file) { setPhoto(file); setPhotoPreview(URL.createObjectURL(file)); }
   };
 
   const handleSubmit = async () => {
     if (form.resumeLink && !form.resumeLink.includes("drive.google.com"))
-      return toast.error("Enter a valid Google Drive link for resume ❌");
+      return toast.error("Enter a valid Google Drive link ❌");
 
     try {
       setLoading(true);
+      const fd = new FormData();
+      fd.append("github",     toUrl.github(form.github));
+      fd.append("linkedin",   toUrl.linkedin(form.linkedin));
+      fd.append("leetcode",   toUrl.leetcode(form.leetcode));
+      fd.append("bio",        form.bio);
+      fd.append("rollNo",     form.rollNo);
+      fd.append("resumeLink", form.resumeLink);
+      if (photo) fd.append("profilePhoto", photo);
 
-      const formData = new FormData();
-      // Convert usernames to full URLs before saving
-      formData.append("github", toFullUrl.github(form.githubUsername));
-      formData.append("linkedin", toFullUrl.linkedin(form.linkedinUsername));
-      formData.append("leetcode", toFullUrl.leetcode(form.leetcodeUsername));
-      formData.append("bio", form.bio);
-      formData.append("rollNo", form.rollNo);
-      formData.append("resumeLink", form.resumeLink);
-      if (photo) formData.append("profilePhoto", photo);
+      if (profileExists) { await updateProfile(fd); toast.success("Profile updated ✅"); }
+      else               { await createProfile(fd); toast.success("Profile created ✅"); }
 
-      if (profileExists) {
-        await updateProfile(formData);
-        toast.success("Profile updated ✅");
-      } else {
-        await createProfile(formData);
-        toast.success("Profile created ✅");
-      }
       navigate("/student/profile");
-    } catch (error) {
-      const msg = error.response?.data?.message || "";
-      if (msg.toLowerCase().includes("roll") || msg.toLowerCase().includes("dup")) {
-        toast.error("A profile with this roll number already exists ❌");
-      } else {
-        toast.error(msg || "Failed to save profile ❌");
-      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "";
+      toast.error(
+        msg.toLowerCase().includes("roll") || msg.toLowerCase().includes("dup")
+          ? "A profile with this roll number already exists ❌"
+          : msg || "Failed to save profile ❌"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   if (fetching) {
-    return <div className="flex justify-center mt-10"><span className="loading loading-spinner loading-lg"></span></div>;
+    return <div className="flex justify-center mt-16"><span className="loading loading-spinner loading-lg"></span></div>;
   }
 
   return (
-    <div className="max-w-xl mx-auto px-2 pb-8">
-      <h2 className="text-2xl font-bold mb-6">{profileExists ? "Edit Profile" : "Create Profile"}</h2>
+    <div className="max-w-lg mx-auto pb-10">
+      <h2 className="text-2xl font-bold mb-5">{profileExists ? "Edit Profile" : "Create Profile"}</h2>
 
       {/* Photo */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        {photoPreview && <img src={photoPreview} className="w-16 h-16 rounded-full object-cover border shrink-0" alt="preview" />}
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-1 block">Profile Photo</label>
-          <input type="file" accept="image/*" className="file-input file-input-bordered w-full text-sm" onChange={handlePhotoChange} />
+      <div className="bg-base-100 rounded-2xl p-4 mb-4 shadow-sm">
+        <p className="text-sm font-semibold mb-3">Profile Photo</p>
+        <div className="flex items-center gap-4">
+          <img
+            src={photoPreview || "https://api.dicebear.com/7.x/initials/svg?seed=U"}
+            className="w-16 h-16 rounded-full object-cover border-2 border-base-300 shrink-0"
+            alt="preview"
+          />
+          <label className="flex-1">
+            <div className="btn btn-outline btn-sm w-full">📷 Choose Photo</div>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+          </label>
         </div>
       </div>
 
-      {/* Roll No */}
-      <div className="mb-4">
-        <label className="text-sm font-medium mb-1 block">Roll Number</label>
-        <input name="rollNo" value={form.rollNo} placeholder="e.g. 21CS045" className="input input-bordered w-full" onChange={handleChange} />
-      </div>
+      {/* Basic info */}
+      <div className="bg-base-100 rounded-2xl p-4 mb-4 shadow-sm space-y-4">
+        <p className="text-sm font-semibold">Basic Info</p>
 
-      {/* Bio */}
-      <div className="mb-4">
-        <label className="text-sm font-medium mb-1 block">Bio <span className="text-gray-400 font-normal">(optional)</span></label>
-        <textarea name="bio" value={form.bio} placeholder="Write a short bio about yourself..." className="textarea textarea-bordered w-full" rows={3} onChange={handleChange} />
-      </div>
-
-      {/* GitHub */}
-      <div className="mb-4">
-        <label className="text-sm font-medium mb-1 block">
-          GitHub Username <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <div className="flex items-center input input-bordered w-full pr-0 gap-0 overflow-hidden">
-          <span className="text-gray-400 text-sm pl-3 pr-1 whitespace-nowrap">github.com/</span>
+        <div>
+          <label className="text-xs text-base-content/60 mb-1 block">Roll Number</label>
           <input
-            name="githubUsername"
-            value={form.githubUsername}
-            placeholder="yourname"
-            className="flex-1 bg-transparent outline-none text-sm py-2 pr-3"
+            name="rollNo" value={form.rollNo}
+            placeholder="e.g. 21CS045"
+            className="input input-bordered w-full"
             onChange={handleChange}
           />
         </div>
-        {form.githubUsername && (
-          <a href={toFullUrl.github(form.githubUsername)} target="_blank" rel="noreferrer"
-            className="text-xs text-blue-500 mt-1 inline-block hover:underline">
-            🔗 {toFullUrl.github(form.githubUsername)}
-          </a>
-        )}
-      </div>
 
-      {/* LinkedIn */}
-      <div className="mb-4">
-        <label className="text-sm font-medium mb-1 block">
-          LinkedIn Username <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <div className="flex items-center input input-bordered w-full pr-0 gap-0 overflow-hidden">
-          <span className="text-gray-400 text-sm pl-3 pr-1 whitespace-nowrap">linkedin.com/in/</span>
-          <input
-            name="linkedinUsername"
-            value={form.linkedinUsername}
-            placeholder="yourname"
-            className="flex-1 bg-transparent outline-none text-sm py-2 pr-3"
+        <div>
+          <label className="text-xs text-base-content/60 mb-1 block">Bio <span className="opacity-50">(optional)</span></label>
+          <textarea
+            name="bio" value={form.bio}
+            placeholder="Tell something about yourself..."
+            className="textarea textarea-bordered w-full resize-none"
+            rows={3}
             onChange={handleChange}
           />
         </div>
-        {form.linkedinUsername && (
-          <a href={toFullUrl.linkedin(form.linkedinUsername)} target="_blank" rel="noreferrer"
-            className="text-xs text-blue-500 mt-1 inline-block hover:underline">
-            🔗 {toFullUrl.linkedin(form.linkedinUsername)}
-          </a>
-        )}
       </div>
 
-      {/* LeetCode */}
-      <div className="mb-4">
-        <label className="text-sm font-medium mb-1 block">
-          LeetCode Username <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <div className="flex items-center input input-bordered w-full pr-0 gap-0 overflow-hidden">
-          <span className="text-gray-400 text-sm pl-3 pr-1 whitespace-nowrap">leetcode.com/u/</span>
-          <input
-            name="leetcodeUsername"
-            value={form.leetcodeUsername}
-            placeholder="yourname"
-            className="flex-1 bg-transparent outline-none text-sm py-2 pr-3"
-            onChange={handleChange}
-          />
+      {/* Social profiles */}
+      <div className="bg-base-100 rounded-2xl p-4 mb-4 shadow-sm space-y-4">
+        <p className="text-sm font-semibold">Social Profiles <span className="text-base-content/40 font-normal text-xs">(optional — just your username)</span></p>
+
+        <div>
+          <label className="text-xs text-base-content/60 mb-1 block">GitHub</label>
+          <PrefixInput prefix="github.com/" name="github" value={form.github} placeholder="yourname" onChange={handleChange} />
+          {form.github && (
+            <a href={toUrl.github(form.github)} target="_blank" rel="noreferrer"
+              className="text-xs text-primary mt-1 inline-block">🔗 {toUrl.github(form.github)}</a>
+          )}
         </div>
-        {form.leetcodeUsername && (
-          <a href={toFullUrl.leetcode(form.leetcodeUsername)} target="_blank" rel="noreferrer"
-            className="text-xs text-blue-500 mt-1 inline-block hover:underline">
-            🔗 {toFullUrl.leetcode(form.leetcodeUsername)}
-          </a>
-        )}
+
+        <div>
+          <label className="text-xs text-base-content/60 mb-1 block">LinkedIn</label>
+          <PrefixInput prefix="linkedin.com/in/" name="linkedin" value={form.linkedin} placeholder="yourname" onChange={handleChange} />
+          {form.linkedin && (
+            <a href={toUrl.linkedin(form.linkedin)} target="_blank" rel="noreferrer"
+              className="text-xs text-primary mt-1 inline-block">🔗 {toUrl.linkedin(form.linkedin)}</a>
+          )}
+        </div>
+
+        <div>
+          <label className="text-xs text-base-content/60 mb-1 block">LeetCode</label>
+          <PrefixInput prefix="leetcode.com/u/" name="leetcode" value={form.leetcode} placeholder="yourname" onChange={handleChange} />
+          {form.leetcode && (
+            <a href={toUrl.leetcode(form.leetcode)} target="_blank" rel="noreferrer"
+              className="text-xs text-primary mt-1 inline-block">🔗 {toUrl.leetcode(form.leetcode)}</a>
+          )}
+        </div>
       </div>
 
       {/* Resume */}
-      <div className="mb-6">
-        <label className="text-sm font-medium mb-1 block">Resume — Google Drive Link <span className="text-gray-400 font-normal">(optional)</span></label>
-        <input name="resumeLink" value={form.resumeLink} placeholder="https://drive.google.com/file/d/..." className="input input-bordered w-full" onChange={handleChange} />
-        <p className="text-xs text-gray-400 mt-1">Google Drive: right-click PDF → Share → Anyone with link → Copy link</p>
+      <div className="bg-base-100 rounded-2xl p-4 mb-6 shadow-sm">
+        <label className="text-sm font-semibold mb-1 block">Resume — Google Drive Link <span className="text-base-content/40 font-normal text-xs">(optional)</span></label>
+        <input
+          name="resumeLink" value={form.resumeLink}
+          placeholder="https://drive.google.com/file/d/..."
+          className="input input-bordered w-full text-sm"
+          onChange={handleChange}
+        />
+        <p className="text-xs text-base-content/40 mt-1">Drive → right-click PDF → Share → Anyone with link → Copy link</p>
       </div>
 
-      <button onClick={handleSubmit} className="btn btn-success w-full" disabled={loading}>
-        {loading ? <span className="loading loading-spinner"></span> : "Save Profile"}
+      <button onClick={handleSubmit} className="btn btn-success w-full btn-lg" disabled={loading}>
+        {loading ? <span className="loading loading-spinner"></span> : "💾 Save Profile"}
       </button>
     </div>
   );

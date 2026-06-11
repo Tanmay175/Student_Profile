@@ -6,42 +6,39 @@ import { GitHubCalendar } from "react-github-calendar";
 import CertificatesSection from "../../components/CertificatesSection";
 import { getGithubUsername, getLeetcodeUsername, DEFAULT_AVATAR } from "../../utils/profileUtils";
 
-function SkeletonLoader() {
+function Skeleton() {
   return (
-    <div className="max-w-4xl mx-auto animate-pulse px-2">
-      <div className="flex items-center gap-4 bg-base-100 shadow p-4 md:p-6 rounded-xl">
+    <div className="animate-pulse space-y-4 max-w-3xl mx-auto">
+      <div className="bg-base-100 rounded-2xl p-4 flex gap-4 items-center">
         <div className="w-20 h-20 rounded-full bg-base-300 shrink-0"></div>
         <div className="flex-1 space-y-2">
-          <div className="h-5 bg-base-300 rounded w-48"></div>
-          <div className="h-4 bg-base-300 rounded w-32"></div>
-          <div className="h-4 bg-base-300 rounded w-64"></div>
+          <div className="h-5 bg-base-300 rounded w-40"></div>
+          <div className="h-3 bg-base-300 rounded w-28"></div>
+          <div className="h-3 bg-base-300 rounded w-52"></div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4 mt-6">
-        {[1,2,3].map(i => <div key={i} className="h-28 bg-base-300 rounded-xl"></div>)}
+      <div className="grid grid-cols-3 gap-3">
+        {[1,2,3].map(i => <div key={i} className="h-24 bg-base-300 rounded-2xl"></div>)}
       </div>
     </div>
   );
 }
 
-// Social card — clickable to open profile, shows username
-function SocialCard({ icon, label, url, username, color }) {
+function SocialCard({ icon, label, url, username, color, editLink }) {
   return (
-    <div className="card bg-base-100 shadow p-4 hover:shadow-md transition-shadow">
-      <div className={`mb-2 ${color}`}>{icon}</div>
-      <p className="font-bold mb-1">{label}</p>
+    <div className="bg-base-100 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+      <div className={`text-xl ${color}`}>{icon}</div>
+      <p className="font-semibold text-sm">{label}</p>
       {url && username ? (
         <>
-          <p className="text-xs text-gray-400 mb-2 font-mono truncate">@{username}</p>
+          <p className="text-xs text-base-content/50 font-mono">@{username}</p>
           <a href={url} target="_blank" rel="noreferrer"
-            className="btn btn-xs btn-outline w-full">
-            View Profile →
-          </a>
+            className="btn btn-xs btn-outline w-full mt-auto">Open →</a>
         </>
       ) : (
-        <div className="flex items-center justify-between">
-          <p className="text-gray-400 text-sm">Not added</p>
-          <Link to="/student/edit" className="text-xs text-primary hover:underline">Add</Link>
+        <div className="flex items-center justify-between mt-auto">
+          <span className="text-xs text-base-content/40">Not added</span>
+          <Link to="/student/edit" className="text-xs text-primary hover:underline">+ Add</Link>
         </div>
       )}
     </div>
@@ -53,122 +50,92 @@ function Profile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getProfile();
-        setProfile(data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+    getProfile()
+      .then(setProfile)
+      .catch(console.log)
+      .finally(() => setLoading(false));
   }, []);
 
-  const githubUsername = getGithubUsername(profile?.github);
+  const githubUsername   = getGithubUsername(profile?.github);
   const leetcodeUsername = getLeetcodeUsername(profile?.leetcode);
   const linkedinUsername = profile?.linkedin
     ? profile.linkedin.replace(/\/$/, "").split("linkedin.com/in/")[1]?.split("/")[0] || ""
     : "";
 
-  const calculateCompletion = () => {
+  const completion = (() => {
     if (!profile) return 0;
     const fields = [profile.linkedin, profile.github, profile.leetcode, profile.resume, profile.bio, profile.rollNo];
-    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-  };
+    return Math.round(fields.filter(Boolean).length / fields.length * 100);
+  })();
 
-  if (loading) return <SkeletonLoader />;
+  if (loading) return <Skeleton />;
 
   if (!profile) {
     return (
-      <div className="text-center mt-10 px-4">
-        <p className="text-red-500 text-lg mb-4">No Profile Found ❗</p>
+      <div className="text-center py-16 px-4">
+        <p className="text-error text-lg mb-4">No Profile Found ❗</p>
         <Link to="/student/edit"><button className="btn btn-primary">Create Profile</button></Link>
       </div>
     );
   }
 
-  const completion = calculateCompletion();
-
   return (
-    <div className="max-w-4xl mx-auto px-2 pb-8">
+    <div className="max-w-3xl mx-auto space-y-4 pb-6">
 
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-base-100 shadow p-4 md:p-6 rounded-xl">
-        <img
-          src={profile.profilePhoto || DEFAULT_AVATAR}
-          onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
-          className="w-24 h-24 rounded-full border-2 border-primary object-cover shrink-0"
-          alt="Profile"
-        />
-        <div className="flex-1 text-center sm:text-left min-w-0">
-          <h2 className="text-xl md:text-2xl font-bold">{profile.name}</h2>
-          <p className="text-sm opacity-70">Batch: {profile.batch}</p>
-          {profile.rollNo && (
-            <p className="text-sm opacity-70">Roll No: <span className="font-semibold">{profile.rollNo}</span></p>
-          )}
-          {profile.bio && (
-            <p className="mt-2 text-sm italic text-gray-400">"{profile.bio}"</p>
-          )}
-          <div className="mt-3">
-            <div className="flex items-center gap-2">
-              <progress className="progress progress-success flex-1 max-w-xs" value={completion} max="100"></progress>
-              <span className="text-sm font-medium">{completion}%</span>
+      {/* Header card */}
+      <div className="bg-base-100 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-start gap-4">
+          <img
+            src={profile.profilePhoto || DEFAULT_AVATAR}
+            onError={e => { e.target.src = DEFAULT_AVATAR; }}
+            className="w-20 h-20 rounded-full object-cover border-2 border-primary/30 shrink-0"
+            alt="Profile"
+          />
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold truncate">{profile.name}</h2>
+            <p className="text-sm text-base-content/60">Batch: {profile.batch}</p>
+            {profile.rollNo && <p className="text-sm text-base-content/60">Roll: {profile.rollNo}</p>}
+            {profile.bio && <p className="text-sm italic text-base-content/40 mt-1 line-clamp-2">"{profile.bio}"</p>}
+            <div className="mt-3 flex items-center gap-2">
+              <progress className="progress progress-success flex-1" value={completion} max="100"></progress>
+              <span className="text-xs font-semibold shrink-0">{completion}%</span>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">Profile completed</p>
           </div>
         </div>
-        <Link to="/student/edit" className="btn btn-primary btn-sm shrink-0">✏️ Edit Profile</Link>
+        <Link to="/student/edit" className="btn btn-primary btn-sm w-full mt-4">✏️ Edit Profile</Link>
       </div>
 
-      {/* SOCIAL CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-        <SocialCard
-          icon={<FaLinkedin size={22} />}
-          label="LinkedIn"
-          url={profile.linkedin}
-          username={linkedinUsername}
-          color="text-blue-500"
-        />
-        <SocialCard
-          icon={<FaGithub size={22} />}
-          label="GitHub"
-          url={profile.github}
-          username={githubUsername}
-          color="text-gray-800"
-        />
-        <SocialCard
-          icon={<FaCode size={22} />}
-          label="LeetCode"
-          url={profile.leetcode}
-          username={leetcodeUsername}
-          color="text-orange-500"
-        />
+      {/* Social cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <SocialCard icon={<FaLinkedin />} label="LinkedIn" url={profile.linkedin} username={linkedinUsername} color="text-blue-500" />
+        <SocialCard icon={<FaGithub />}   label="GitHub"   url={profile.github}   username={githubUsername}   color="text-base-content" />
+        <SocialCard icon={<FaCode />}     label="LeetCode" url={profile.leetcode} username={leetcodeUsername} color="text-orange-500" />
       </div>
 
-      {/* GITHUB CALENDAR */}
+      {/* GitHub activity */}
       {githubUsername && (
-        <div className="mt-5 bg-base-100 shadow p-4 md:p-6 rounded-xl overflow-x-auto">
+        <div className="bg-base-100 rounded-2xl p-4 shadow-sm overflow-x-auto">
           <h3 className="font-bold mb-3">GitHub Activity</h3>
-          <GitHubCalendar username={githubUsername} />
-        </div>
-      )}
-
-      {/* RESUME */}
-      {profile.resume && (
-        <div className="mt-5 bg-base-100 shadow p-4 md:p-6 rounded-xl">
-          <h3 className="font-bold mb-3">Resume</h3>
-          <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
-            <iframe src={profile.resume} className="absolute inset-0 w-full h-full rounded" title="Resume" allow="autoplay"></iframe>
+          <div className="min-w-0">
+            <GitHubCalendar username={githubUsername} fontSize={10} blockSize={10} blockMargin={2} />
           </div>
-          <a href={profile.resume} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm mt-3">📄 Open in Drive</a>
         </div>
       )}
 
-      {/* CERTIFICATES */}
-      <CertificatesSection studentId={profile?.userId} isOwner={true} />
+      {/* Resume */}
+      {profile.resume && (
+        <div className="bg-base-100 rounded-2xl p-4 shadow-sm">
+          <h3 className="font-bold mb-3">Resume</h3>
+          <div className="relative w-full rounded-xl overflow-hidden" style={{ paddingTop: "56.25%" }}>
+            <iframe src={profile.resume} className="absolute inset-0 w-full h-full" title="Resume" allow="autoplay" />
+          </div>
+          <a href={profile.resume} target="_blank" rel="noreferrer"
+            className="btn btn-outline btn-sm w-full mt-3">📄 Open in Drive</a>
+        </div>
+      )}
 
+      {/* Certificates */}
+      <CertificatesSection studentId={profile?.userId} isOwner={true} />
     </div>
   );
 }
